@@ -41,7 +41,7 @@ export function ApiQuery(options: ApiQueryOptions): MethodDecorator {
   const apiQueryMetadata = options as ApiQueryMetadata;
   const [type, isArray] = getTypeIsArrayTuple(
     apiQueryMetadata.type,
-    apiQueryMetadata.isArray as any
+    apiQueryMetadata.isArray as any,
   );
   const param: ApiQueryMetadata & Record<string, any> = {
     name: options.name == null ? defaultQueryOptions.name : options.name,

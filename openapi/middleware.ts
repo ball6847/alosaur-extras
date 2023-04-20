@@ -20,7 +20,7 @@ export class OpenApiMiddleware implements MiddlewareTarget<unknown> {
       context.response.result = Content(
         swaggerInit,
         200,
-        new Headers({ "Content-Type": "text/javascript" })
+        new Headers({ "Content-Type": "text/javascript" }),
       );
     } else if (!context.request.url.endsWith("/")) {
       context.response.result = Redirect(context.request.url.concat("/"));

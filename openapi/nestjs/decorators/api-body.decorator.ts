@@ -39,7 +39,7 @@ const defaultBodyMetadata: ApiBodyMetadata = {
 export function ApiBody(options: ApiBodyOptions): MethodDecorator {
   const [type, isArray] = getTypeIsArrayTuple(
     (options as ApiBodyMetadata).type,
-    (options as ApiBodyMetadata).isArray as any
+    (options as ApiBodyMetadata).isArray as any,
   );
   const param: ApiBodyMetadata & Record<string, any> = {
     in: "body",

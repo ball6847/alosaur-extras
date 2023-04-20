@@ -14,12 +14,12 @@ function isServiceErrorLike(error: any): error is ServiceErrorLike {
 
 export function globalErrorHandler(
   context: HttpContext,
-  error: Error | ServiceErrorLike | ActionResult
+  error: Error | ServiceErrorLike | ActionResult,
 ) {
   if (isServiceErrorLike(error)) {
     context.response.result = Content(
       { error: pick(error, ["code", "message", "details"]) },
-      error.httpCode
+      error.httpCode,
     );
   } else if (!(error instanceof Error) && error.__isActionResult) {
     context.response.result = error;

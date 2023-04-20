@@ -1,20 +1,20 @@
-import { memoizy } from './deps.ts';
-import { ApiProperty } from './openapi/nestjs/decorators/api-property.decorator.ts';
+import { memoizy } from "./deps.ts";
+import { ApiProperty } from "./openapi/nestjs/decorators/api-property.decorator.ts";
 
-export type FieldType = 'number' | 'string' | 'boolean' | 'enum';
+export type FieldType = "number" | "string" | "boolean" | "enum";
 
 type PrimitiveType = string | number | boolean;
 
 export type FilterOperator =
-  | 'eq'
-  | 'ne'
-  | 'gt'
-  | 'ge'
-  | 'lt'
-  | 'le'
-  | 'in'
-  | 'nin'
-  | 'match';
+  | "eq"
+  | "ne"
+  | "gt"
+  | "ge"
+  | "lt"
+  | "le"
+  | "in"
+  | "nin"
+  | "match";
 
 export interface FieldInfo {
   type: FieldType;
@@ -55,31 +55,36 @@ export class MetadataPagination {
 export class MetaData {
   @ApiProperty({ type: MetadataPagination })
   pagination!: MetadataPagination;
-  filter?: Record<string, Record<FilterOperator, PrimitiveType | PrimitiveType[]>>;
-  sort?: Record<string, 'asc' | 'desc'>;
-  includes?: EntityContext['related'];
+  filter?: Record<
+    string,
+    Record<FilterOperator, PrimitiveType | PrimitiveType[]>
+  >;
+  sort?: Record<string, "asc" | "desc">;
+  includes?: EntityContext["related"];
 }
 
 type SupportedOperator = {
-  number: 'eq' | 'ne' | 'gt' | 'ge' | 'lt' | 'le' | 'in' | 'nin';
-  string: 'eq' | 'ne' | 'match' | 'in' | 'nin';
-  enum: 'eq' | 'ne' | 'in' | 'nin';
-  boolean: 'eq' | 'ne';
+  number: "eq" | "ne" | "gt" | "ge" | "lt" | "le" | "in" | "nin";
+  string: "eq" | "ne" | "match" | "in" | "nin";
+  enum: "eq" | "ne" | "in" | "nin";
+  boolean: "eq" | "ne";
 };
 
 const defaultOperators: {
-  number: SupportedOperator['number'][];
-  string: SupportedOperator['string'][];
-  enum: SupportedOperator['enum'][];
-  boolean: SupportedOperator['boolean'][];
+  number: SupportedOperator["number"][];
+  string: SupportedOperator["string"][];
+  enum: SupportedOperator["enum"][];
+  boolean: SupportedOperator["boolean"][];
 } = {
-  number: ['eq', 'ne', 'gt', 'ge', 'lt', 'le'],
-  string: ['eq', 'ne', 'match'],
-  enum: ['eq', 'ne'],
-  boolean: ['eq', 'ne'],
+  number: ["eq", "ne", "gt", "ge", "lt", "le"],
+  string: ["eq", "ne", "match"],
+  enum: ["eq", "ne"],
+  boolean: ["eq", "ne"],
 };
 
-const getDefaultContext = (context: Partial<EntityContext>): Required<EntityContext> => {
+const getDefaultContext = (
+  context: Partial<EntityContext>,
+): Required<EntityContext> => {
   const defaultContext: Required<EntityContext> = {
     fields: {},
     related: {},
@@ -90,28 +95,33 @@ const getDefaultContext = (context: Partial<EntityContext>): Required<EntityCont
   return { ...defaultContext, ...context };
 };
 
-export const parseQueryString = memoizy((queryString: string, option: EntityContext): MetaData => {
-  const query = new URLSearchParams(queryString);
-  const metadata: MetaData = {
-    pagination: parsePagination(query, option),
-  };
-  const filter = parseFilters(query, option);
-  if (Object.keys(filter).length > 0) {
-    metadata.filter = filter;
-  }
-  if (query.has('sort')) {
-    metadata.sort = parseSorting(query, option);
-  }
-  if (query.has('includes')) {
-    metadata.includes = parseIncludes(query, option);
-  }
-  return metadata;
-});
+export const parseQueryString = memoizy(
+  (queryString: string, option: EntityContext): MetaData => {
+    const query = new URLSearchParams(queryString);
+    const metadata: MetaData = {
+      pagination: parsePagination(query, option),
+    };
+    const filter = parseFilters(query, option);
+    if (Object.keys(filter).length > 0) {
+      metadata.filter = filter;
+    }
+    if (query.has("sort")) {
+      metadata.sort = parseSorting(query, option);
+    }
+    if (query.has("includes")) {
+      metadata.includes = parseIncludes(query, option);
+    }
+    return metadata;
+  },
+);
 
-export function parsePagination(query: URLSearchParams, option: EntityContext): MetaData['pagination'] {
+export function parsePagination(
+  query: URLSearchParams,
+  option: EntityContext,
+): MetaData["pagination"] {
   const context = getDefaultContext(option);
-  let page = Number(query.get('page')) || 1;
-  let limit = Number(query.get('limit') ?? context.defaultLimit);
+  let page = Number(query.get("page")) || 1;
+  let limit = Number(query.get("limit") ?? context.defaultLimit);
   // fallback invalid page value to 1
   if (isNaN(page) || page < 1) {
     page = 1;
@@ -141,8 +151,8 @@ export function parsePagination(query: URLSearchParams, option: EntityContext): 
 
 export function parseFilters(query: URLSearchParams, option: EntityContext) {
   const context = getDefaultContext(option);
-  const filter: MetaData['filter'] = {};
-  const disallow = ['sort', 'page', 'limit', 'includes'];
+  const filter: MetaData["filter"] = {};
+  const disallow = ["sort", "page", "limit", "includes"];
   query.forEach((value, key) => {
     if (disallow.includes(key)) {
       return;
@@ -150,14 +160,17 @@ export function parseFilters(query: URLSearchParams, option: EntityContext) {
     const match = key.match(/^(.+?)(?:\[(.+)\])?$/);
     if (match) {
       const field = match[1];
-      const operator = (match[2] ?? 'eq') as FilterOperator;
+      const operator = (match[2] ?? "eq") as FilterOperator;
       const fieldInfo = context.fields[field];
       if (fieldInfo && fieldInfo.filterable) {
-        const supported = fieldInfo.supportedOperators ?? defaultOperators[fieldInfo.type];
+        const supported = fieldInfo.supportedOperators ??
+          defaultOperators[fieldInfo.type];
         if (supported.includes(operator)) {
           filter[field] = filter[field] || {};
-          if (operator === 'in' || operator === 'nin') {
-            filter[field][operator] = value.split(',').map((v) => parsePrimitive(v, fieldInfo.type));
+          if (operator === "in" || operator === "nin") {
+            filter[field][operator] = value.split(",").map((v) =>
+              parsePrimitive(v, fieldInfo.type)
+            );
           } else {
             filter[field][operator] = parsePrimitive(value, fieldInfo.type);
           }
@@ -168,12 +181,15 @@ export function parseFilters(query: URLSearchParams, option: EntityContext) {
   return filter;
 }
 
-function parsePrimitive(value: string, type: FieldType): string | number | boolean {
+function parsePrimitive(
+  value: string,
+  type: FieldType,
+): string | number | boolean {
   switch (type) {
-    case 'number':
+    case "number":
       return Number(value);
-    case 'boolean':
-      return ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+    case "boolean":
+      return ["true", "1", "yes", "on"].includes(value.toLowerCase());
     default:
       return value;
   }
@@ -181,13 +197,13 @@ function parsePrimitive(value: string, type: FieldType): string | number | boole
 
 export function parseSorting(query: URLSearchParams, option: EntityContext) {
   const context = getDefaultContext(option);
-  const sort: Record<string, 'asc' | 'desc'> = {};
-  const sortQuery = query.get('sort');
+  const sort: Record<string, "asc" | "desc"> = {};
+  const sortQuery = query.get("sort");
   if (sortQuery) {
-    const fields = sortQuery.split(',');
+    const fields = sortQuery.split(",");
     for (const field of fields) {
-      const direction = field.startsWith('-') ? 'desc' : 'asc';
-      const fieldName = direction === 'desc' ? field.substring(1) : field;
+      const direction = field.startsWith("-") ? "desc" : "asc";
+      const fieldName = direction === "desc" ? field.substring(1) : field;
       const fieldInfo = context.fields[fieldName];
       if (fieldInfo && fieldInfo.sortable) {
         sort[fieldName] = direction;
@@ -197,18 +213,24 @@ export function parseSorting(query: URLSearchParams, option: EntityContext) {
   return sort;
 }
 
-export function parseIncludes(query: URLSearchParams, option: EntityContext): MetaData['includes'] {
+export function parseIncludes(
+  query: URLSearchParams,
+  option: EntityContext,
+): MetaData["includes"] {
   const context = getDefaultContext(option);
   const relatedFields = context.related ?? {};
-  const includeQuery = query.get('includes');
+  const includeQuery = query.get("includes");
   if (!includeQuery) {
     return {};
   }
-  const includes = includeQuery.split(',').map((include) => include.trim());
-  return includes.reduce<Record<string, { entity: string; fields: string[] }>>((acc, include) => {
-    if (include in relatedFields) {
-      acc[include] = relatedFields[include];
-    }
-    return acc;
-  }, {});
+  const includes = includeQuery.split(",").map((include) => include.trim());
+  return includes.reduce<Record<string, { entity: string; fields: string[] }>>(
+    (acc, include) => {
+      if (include in relatedFields) {
+        acc[include] = relatedFields[include];
+      }
+      return acc;
+    },
+    {},
+  );
 }

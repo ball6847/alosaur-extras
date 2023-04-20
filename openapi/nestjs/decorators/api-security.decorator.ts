@@ -1,8 +1,8 @@
 // deno-lint-ignore-file no-unused-vars ban-types no-explicit-any
-import { DECORATORS } from '../constants.ts';
-import { SecurityRequirementObject } from '../interfaces/open-api-spec.interface.ts';
-import { Reflect } from '../reflect.ts';
-import { extendMetadata } from '../utils/extend-metadata.util.ts';
+import { DECORATORS } from "../constants.ts";
+import { SecurityRequirementObject } from "../interfaces/open-api-spec.interface.ts";
+import { Reflect } from "../reflect.ts";
+import { extendMetadata } from "../utils/extend-metadata.util.ts";
 
 export function ApiSecurity(
   name: string | SecurityRequirementObject,
@@ -10,7 +10,7 @@ export function ApiSecurity(
 ): ClassDecorator & MethodDecorator {
   let metadata: SecurityRequirementObject[];
 
-  if (typeof name === 'string') {
+  if (typeof name === "string") {
     metadata = [{ [name]: requirements }];
   } else {
     metadata = [name];

@@ -3,7 +3,7 @@
 // most of the code was taken from https://github.com/scottie1984/swagger-ui-express/blob/master/index.js
 // all credit go to the original author of swagger-ui-express
 
-let swaggerInit = '';
+let swaggerInit = "";
 
 const favIconHtml =
   '<link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.18.2/favicon-32x32.png" sizes="32x32" />' +
@@ -144,29 +144,29 @@ function toExternalStylesheetTag(url: string) {
 }
 
 function toTags(customCode: string[], toScript: (str: string) => string) {
-  if (typeof customCode === 'string') {
+  if (typeof customCode === "string") {
     return toScript(customCode);
   } else if (Array.isArray(customCode)) {
-    return customCode.map(toScript).join('\n');
+    return customCode.map(toScript).join("\n");
   } else {
-    return '';
+    return "";
   }
 }
 
 const stringify = function (obj: unknown, _prop?: unknown) {
-  const placeholder = '____FUNCTIONPLACEHOLDER____';
+  const placeholder = "____FUNCTIONPLACEHOLDER____";
   const fns: any[] = [];
   let json = JSON.stringify(obj, function (_key, value) {
-    if (typeof value === 'function') {
+    if (typeof value === "function") {
       fns.push(value);
       return placeholder;
     }
     return value;
   }, 2);
-  json = json.replace(new RegExp('"' + placeholder + '"', 'g'), function (_) {
+  json = json.replace(new RegExp('"' + placeholder + '"', "g"), function (_) {
     return fns.shift();
   });
-  return 'var options = ' + json + ';';
+  return "var options = " + json + ";";
 };
 
 const generateHTML = function (
@@ -186,7 +186,7 @@ const generateHTML = function (
   let swaggerUrls: any;
   let customCssUrl: any;
   let customRobots: any;
-  if (opts && typeof opts === 'object') {
+  if (opts && typeof opts === "object") {
     options = opts.swaggerOptions;
     customCss = opts.customCss;
     customJs = opts.customJs;
@@ -203,22 +203,43 @@ const generateHTML = function (
     isExplorer = opts;
   }
   options = options || {};
-  const explorerString = isExplorer ? '' : '.swagger-ui .topbar .download-url-wrapper { display: none }';
-  customCss = explorerString + ' ' + customCss || explorerString;
+  const explorerString = isExplorer
+    ? ""
+    : ".swagger-ui .topbar .download-url-wrapper { display: none }";
+  customCss = explorerString + " " + customCss || explorerString;
   customfavIcon = customfavIcon || false;
-  customSiteTitle = customSiteTitle || 'Swagger UI';
+  customSiteTitle = customSiteTitle || "Swagger UI";
   _htmlTplString = _htmlTplString || htmlTplString;
   _jsTplString = _jsTplString || jsTplString;
 
-  const robotsMetaString = customRobots ? '<meta name="robots" content="' + customRobots + '" />' : '';
-  const favIconString = customfavIcon ? '<link rel="icon" href="' + customfavIcon + '" />' : favIconHtml;
-  const htmlWithCustomCss = _htmlTplString.toString().replace('<% customCss %>', customCss);
-  const htmlWithCustomRobots = htmlWithCustomCss.replace('<% robotsMetaString %>', robotsMetaString);
-  const htmlWithFavIcon = htmlWithCustomRobots.replace('<% favIconString %>', favIconString);
-  const htmlWithCustomJsUrl = htmlWithFavIcon.replace('<% customJs %>', toTags(customJs, toExternalScriptTag));
-  const htmlWithCustomJs = htmlWithCustomJsUrl.replace('<% customJsStr %>', toTags(customJsStr, toInlineScriptTag));
+  const robotsMetaString = customRobots
+    ? '<meta name="robots" content="' + customRobots + '" />'
+    : "";
+  const favIconString = customfavIcon
+    ? '<link rel="icon" href="' + customfavIcon + '" />'
+    : favIconHtml;
+  const htmlWithCustomCss = _htmlTplString.toString().replace(
+    "<% customCss %>",
+    customCss,
+  );
+  const htmlWithCustomRobots = htmlWithCustomCss.replace(
+    "<% robotsMetaString %>",
+    robotsMetaString,
+  );
+  const htmlWithFavIcon = htmlWithCustomRobots.replace(
+    "<% favIconString %>",
+    favIconString,
+  );
+  const htmlWithCustomJsUrl = htmlWithFavIcon.replace(
+    "<% customJs %>",
+    toTags(customJs, toExternalScriptTag),
+  );
+  const htmlWithCustomJs = htmlWithCustomJsUrl.replace(
+    "<% customJsStr %>",
+    toTags(customJsStr, toInlineScriptTag),
+  );
   const htmlWithCustomCssUrl = htmlWithCustomJs.replace(
-    '<% customCssUrl %>',
+    "<% customCssUrl %>",
     toTags(customCssUrl, toExternalStylesheetTag),
   );
 
@@ -229,8 +250,11 @@ const generateHTML = function (
     swaggerUrls: swaggerUrls || undefined,
   };
 
-  swaggerInit = _jsTplString.toString().replace('<% swaggerOptions %>', stringify(initOptions));
-  return htmlWithCustomCssUrl.replace('<% title %>', customSiteTitle);
+  swaggerInit = _jsTplString.toString().replace(
+    "<% swaggerOptions %>",
+    stringify(initOptions),
+  );
+  return htmlWithCustomCssUrl.replace("<% title %>", customSiteTitle);
 };
 
 export { generateHTML, swaggerInit };

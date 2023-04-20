@@ -1,19 +1,19 @@
 // deno-lint-ignore-file no-unused-vars no-explicit-any
-import { pickBy } from 'https://esm.sh/v115/midash@0.8.2';
-import { buildDocumentBase } from './fixtures/document.base.ts';
-import { OpenAPIObject } from './interfaces/mod.ts';
+import { pickBy } from "https://esm.sh/v115/midash@0.8.2";
+import { buildDocumentBase } from "./fixtures/document.base.ts";
+import { OpenAPIObject } from "./interfaces/mod.ts";
 import {
   ExternalDocumentationObject,
   SecurityRequirementObject,
   SecuritySchemeObject,
   ServerVariableObject,
   TagObject,
-} from './interfaces/open-api-spec.interface.ts';
+} from "./interfaces/open-api-spec.interface.ts";
 // import { GlobalParametersStorage } from './storages/global-parameters.storage';
 
 export class DocumentBuilder {
   // private readonly logger = new Logger(DocumentBuilder.name);
-  private readonly document: Omit<OpenAPIObject, 'paths'> = buildDocumentBase();
+  private readonly document: Omit<OpenAPIObject, "paths"> = buildDocumentBase();
 
   public setTitle(title: string): this {
     this.document.info.title = title;
@@ -71,7 +71,7 @@ export class DocumentBuilder {
 
   public addTag(
     name: string,
-    description = '',
+    description = "",
     externalDocs?: ExternalDocumentationObject,
   ): this {
     this.document.tags = this.document.tags?.concat(
@@ -108,7 +108,7 @@ export class DocumentBuilder {
   ): this {
     let securityRequirement: SecurityRequirementObject;
 
-    if (typeof name === 'string') {
+    if (typeof name === "string") {
       securityRequirement = { [name]: requirements };
     } else {
       securityRequirement = name;
@@ -122,13 +122,13 @@ export class DocumentBuilder {
 
   public addBearerAuth(
     options: SecuritySchemeObject = {
-      type: 'http',
+      type: "http",
     },
-    name = 'bearer',
+    name = "bearer",
   ): this {
     this.addSecurity(name, {
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
+      scheme: "bearer",
+      bearerFormat: "JWT",
       ...options,
     });
     return this;
@@ -136,64 +136,64 @@ export class DocumentBuilder {
 
   public addOAuth2(
     options: SecuritySchemeObject = {
-      type: 'oauth2',
+      type: "oauth2",
     },
-    name = 'oauth2',
+    name = "oauth2",
   ): this {
     this.addSecurity(name, {
       flows: {},
       ...options,
-      type: options.type || 'oauth2',
+      type: options.type || "oauth2",
     });
     return this;
   }
 
   public addApiKey(
     options: SecuritySchemeObject = {
-      type: 'apiKey',
+      type: "apiKey",
     },
-    name = 'api_key',
+    name = "api_key",
   ): this {
     this.addSecurity(name, {
-      in: 'header',
+      in: "header",
       name,
       ...options,
-      type: options.type || 'apiKey',
+      type: options.type || "apiKey",
     });
     return this;
   }
 
   public addBasicAuth(
     options: SecuritySchemeObject = {
-      type: 'http',
+      type: "http",
     },
-    name = 'basic',
+    name = "basic",
   ): this {
     this.addSecurity(name, {
-      scheme: 'basic',
+      scheme: "basic",
       ...options,
-      type: options.type || 'http',
+      type: options.type || "http",
     });
     return this;
   }
 
   public addCookieAuth(
-    cookieName = 'connect.sid',
+    cookieName = "connect.sid",
     options: SecuritySchemeObject = {
-      type: 'apiKey',
+      type: "apiKey",
     },
-    securityName = 'cookie',
+    securityName = "cookie",
   ): this {
     this.addSecurity(securityName, {
-      in: 'cookie',
+      in: "cookie",
       name: cookieName,
       ...options,
-      type: options.type || 'apiKey',
+      type: options.type || "apiKey",
     });
     return this;
   }
 
-  public build(): Omit<OpenAPIObject, 'paths'> {
+  public build(): Omit<OpenAPIObject, "paths"> {
     return this.document;
   }
 }

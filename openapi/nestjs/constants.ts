@@ -1,4 +1,4 @@
-export const DECORATORS_PREFIX = 'swagger';
+export const DECORATORS_PREFIX = "swagger";
 export const DECORATORS = {
   API_OPERATION: `${DECORATORS_PREFIX}/apiOperation`,
   API_RESPONSE: `${DECORATORS_PREFIX}/apiResponse`,

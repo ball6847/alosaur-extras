@@ -1,12 +1,12 @@
-import { pickBy } from 'https://esm.sh/v115/midash@0.8.2';
-import { DECORATORS } from '../constants.ts';
-import { OperationObject } from '../interfaces/open-api-spec.interface.ts';
-import { createMethodDecorator } from './helpers.ts';
+import { pickBy } from "https://esm.sh/v115/midash@0.8.2";
+import { DECORATORS } from "../constants.ts";
+import { OperationObject } from "../interfaces/open-api-spec.interface.ts";
+import { createMethodDecorator } from "./helpers.ts";
 
 export type ApiOperationOptions = Partial<OperationObject>;
 
 const defaultOperationOptions: ApiOperationOptions = {
-  summary: '',
+  summary: "",
 };
 
 export function ApiOperation(options: ApiOperationOptions): MethodDecorator {

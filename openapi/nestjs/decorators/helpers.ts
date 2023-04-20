@@ -1,9 +1,9 @@
 // deno-lint-ignore-file no-explicit-any ban-types no-unused-vars
-import { pickBy } from 'https://esm.sh/v115/midash@0.8.2';
-import { DECORATORS } from '../constants.ts';
-import { Reflect } from '../reflect.ts';
+import { pickBy } from "https://esm.sh/v115/midash@0.8.2";
+import { DECORATORS } from "../constants.ts";
+import { Reflect } from "../reflect.ts";
 
-export const METADATA_FACTORY_NAME = '_OPENAPI_METADATA_FACTORY';
+export const METADATA_FACTORY_NAME = "_OPENAPI_METADATA_FACTORY";
 
 export function createMethodDecorator<T = any>(
   metakey: string,
@@ -37,7 +37,8 @@ export function createPropertyDecorator<T extends Record<string, any> = any>(
 ): PropertyDecorator {
   return (target: object, propertyKey: string | symbol) => {
     const propKey = String(propertyKey);
-    const properties = Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES_ARRAY, target) || [];
+    const properties =
+      Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES_ARRAY, target) || [];
 
     const key = `:${propKey}`;
     if (!properties.includes(key)) {
@@ -63,8 +64,9 @@ export function createPropertyDecorator<T extends Record<string, any> = any>(
       Reflect.defineMetadata(metakey, metadataToSave, target, propKey);
     } else {
       // @ts-ignore as this is very denymic
-      const type = target?.constructor?.[METADATA_FACTORY_NAME]?.()[propKey]?.type ??
-        Reflect.getMetadata('design:type', target, propKey);
+      const type =
+        target?.constructor?.[METADATA_FACTORY_NAME]?.()[propKey]?.type ??
+          Reflect.getMetadata("design:type", target, propKey);
 
       Reflect.defineMetadata(
         metakey,
@@ -91,10 +93,12 @@ export function createMixedDecorator<T = any>(
     if (descriptor) {
       let metadatas: any;
       if (Array.isArray(metadata)) {
-        const previousMetadata = Reflect.getMetadata(metakey, descriptor.value) || [];
+        const previousMetadata =
+          Reflect.getMetadata(metakey, descriptor.value) || [];
         metadatas = [...previousMetadata, ...metadata];
       } else {
-        const previousMetadata = Reflect.getMetadata(metakey, descriptor.value) || {};
+        const previousMetadata =
+          Reflect.getMetadata(metakey, descriptor.value) || {};
         metadatas = { ...previousMetadata, ...metadata };
       }
       Reflect.defineMetadata(metakey, metadatas, descriptor.value);
@@ -114,7 +118,8 @@ export function createParamDecorator<T extends Record<string, any> = any>(
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const parameters = Reflect.getMetadata(DECORATORS.API_PARAMETERS, descriptor.value) || [];
+    const parameters =
+      Reflect.getMetadata(DECORATORS.API_PARAMETERS, descriptor.value) || [];
     Reflect.defineMetadata(
       DECORATORS.API_PARAMETERS,
       [

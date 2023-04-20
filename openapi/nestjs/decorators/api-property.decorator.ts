@@ -1,17 +1,19 @@
 // deno-lint-ignore-file no-explicit-any
-import { DECORATORS } from '../constants.ts';
-import { SchemaObjectMetadata } from '../interfaces/schema-object-metadata.interface.ts';
-import { SwaggerEnumType } from '../types/swagger-enum.type.ts';
-import { getEnumType, getEnumValues } from '../utils/enum.utils.ts';
-import { createPropertyDecorator, getTypeIsArrayTuple } from './helpers.ts';
+import { DECORATORS } from "../constants.ts";
+import { SchemaObjectMetadata } from "../interfaces/schema-object-metadata.interface.ts";
+import { SwaggerEnumType } from "../types/swagger-enum.type.ts";
+import { getEnumType, getEnumValues } from "../utils/enum.utils.ts";
+import { createPropertyDecorator, getTypeIsArrayTuple } from "./helpers.ts";
 
-export interface ApiPropertyOptions extends Omit<SchemaObjectMetadata, 'name' | 'enum'> {
+export interface ApiPropertyOptions
+  extends Omit<SchemaObjectMetadata, "name" | "enum"> {
   name?: string;
   enum?: any[] | Record<string, any>;
   enumName?: string;
 }
 
-const isEnumArray = (obj: ApiPropertyOptions): boolean => (obj.isArray as NonNullable<boolean>) && !!obj.enum;
+const isEnumArray = (obj: ApiPropertyOptions): boolean =>
+  (obj.isArray as NonNullable<boolean>) && !!obj.enum;
 
 export function ApiProperty(
   options: ApiPropertyOptions = {},
@@ -23,7 +25,10 @@ export function createApiPropertyDecorator(
   options: ApiPropertyOptions = {},
   overrideExisting = true,
 ): PropertyDecorator {
-  const [type, isArray] = getTypeIsArrayTuple(options.type, options.isArray as NonNullable<boolean>);
+  const [type, isArray] = getTypeIsArrayTuple(
+    options.type,
+    options.isArray as NonNullable<boolean>,
+  );
   options = {
     ...options,
     type,
@@ -31,9 +36,11 @@ export function createApiPropertyDecorator(
   };
 
   if (isEnumArray(options)) {
-    options.type = 'array';
+    options.type = "array";
 
-    const enumValues = getEnumValues(options.enum as NonNullable<SwaggerEnumType>);
+    const enumValues = getEnumValues(
+      options.enum as NonNullable<SwaggerEnumType>,
+    );
     options.items = {
       type: getEnumType(enumValues),
       enum: enumValues,
@@ -47,9 +54,9 @@ export function createApiPropertyDecorator(
   }
 
   if (Array.isArray(options.type)) {
-    options.type = 'array';
+    options.type = "array";
     options.items = {
-      type: 'array',
+      type: "array",
       items: {
         type: options.type[0],
       },
@@ -75,7 +82,7 @@ export function ApiPropertyOptional(
 export function ApiResponseProperty(
   options: Pick<
     ApiPropertyOptions,
-    'type' | 'example' | 'format' | 'enum' | 'deprecated'
+    "type" | "example" | "format" | "enum" | "deprecated"
   > = {},
 ): PropertyDecorator {
   return ApiProperty({

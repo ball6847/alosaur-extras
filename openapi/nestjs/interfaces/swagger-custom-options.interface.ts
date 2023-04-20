@@ -1,4 +1,4 @@
-import { SwaggerUiOptions } from './swagger-ui-options.interface.ts';
+import { SwaggerUiOptions } from "./swagger-ui-options.interface.ts";
 
 export interface SwaggerCustomOptions {
   useGlobalPrefix?: boolean;
@@ -13,7 +13,7 @@ export interface SwaggerCustomOptions {
   customSiteTitle?: string;
   validatorUrl?: string;
   url?: string;
-  urls?: Record<'url' | 'name', string>[];
+  urls?: Record<"url" | "name", string>[];
   jsonDocumentUrl?: string;
   yamlDocumentUrl?: string;
 }

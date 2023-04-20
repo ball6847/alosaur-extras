@@ -53,7 +53,7 @@ export function Conflict(code = "CONFLICT", message?: string) {
  */
 export function InternalServerError(
   code = "INTERNAL_SERVER_ERROR",
-  message?: string
+  message?: string,
 ) {
   const error = { code, message: message || humanize(code) };
   return Content({ error }, 500);

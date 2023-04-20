@@ -1,13 +1,13 @@
 // deno-lint-ignore-file no-explicit-any
-import { SchemaObject } from '../interfaces/open-api-spec.interface.ts';
-import { SchemaObjectMetadata } from '../interfaces/schema-object-metadata.interface.ts';
-import { SwaggerEnumType } from '../types/swagger-enum.type.ts';
+import { SchemaObject } from "../interfaces/open-api-spec.interface.ts";
+import { SchemaObjectMetadata } from "../interfaces/schema-object-metadata.interface.ts";
+import { SwaggerEnumType } from "../types/swagger-enum.type.ts";
 
 export function getEnumValues(enumType: SwaggerEnumType): string[] | number[] {
   if (Array.isArray(enumType)) {
     return enumType as string[];
   }
-  if (typeof enumType !== 'object') {
+  if (typeof enumType !== "object") {
     return [];
   }
   /*
@@ -25,7 +25,7 @@ export function getEnumValues(enumType: SwaggerEnumType): string[] | number[] {
       }
    */
   const numericValues = Object.values(enumType)
-    .filter((value) => typeof value === 'number')
+    .filter((value) => typeof value === "number")
     .map((value) => value.toString());
 
   return Object.keys(enumType)
@@ -33,18 +33,18 @@ export function getEnumValues(enumType: SwaggerEnumType): string[] | number[] {
     .map((key: any) => enumType[key]);
 }
 
-export function getEnumType(values: (string | number)[]): 'string' | 'number' {
-  const hasString = values.filter((v) => typeof v === 'string').length > 0;
-  return hasString ? 'string' : 'number';
+export function getEnumType(values: (string | number)[]): "string" | "number" {
+  const hasString = values.filter((v) => typeof v === "string").length > 0;
+  return hasString ? "string" : "number";
 }
 
 export function addEnumArraySchema(
-  paramDefinition: Partial<Record<'schema' | 'isArray' | 'enumName', any>>,
-  decoratorOptions: Partial<Record<'enum' | 'enumName', any>>,
+  paramDefinition: Partial<Record<"schema" | "isArray" | "enumName", any>>,
+  decoratorOptions: Partial<Record<"enum" | "enumName", any>>,
 ) {
   const paramSchema: SchemaObject = paramDefinition.schema || {};
   paramDefinition.schema = paramSchema;
-  paramSchema.type = 'array';
+  paramSchema.type = "array";
   delete paramDefinition.isArray;
 
   const enumValues = getEnumValues(decoratorOptions.enum);
@@ -74,13 +74,14 @@ export function addEnumSchema(
   }
 }
 
-export const isEnumArray = <T extends Partial<Record<'isArray' | 'enum', any>>>(
+export const isEnumArray = <T extends Partial<Record<"isArray" | "enum", any>>>(
   obj: Record<string, any>,
 ): obj is T => obj.isArray && obj.enum;
 
-export const isEnumDefined = <T extends Partial<Record<'enum', any>>>(
+export const isEnumDefined = <T extends Partial<Record<"enum", any>>>(
   obj: Record<string, any>,
 ): obj is T => obj.enum;
 
 export const isEnumMetadata = (metadata: SchemaObjectMetadata) =>
-  metadata.enum || (metadata.isArray && (metadata.items as SchemaObject)?.['enum']);
+  metadata.enum ||
+  (metadata.isArray && (metadata.items as SchemaObject)?.["enum"]);

@@ -1,16 +1,16 @@
 // deno-lint-ignore-file no-explicit-any ban-types
 
 import {
-  AuthPolicy,
   AuthenticationScheme,
+  AuthPolicy,
   BusinessType,
+  container,
   Content,
+  getMetadataArgsStorage,
   HookTarget,
   Identity,
   SecurityContext,
   Singleton,
-  container,
-  getMetadataArgsStorage,
 } from "../deps.ts";
 
 // Our implementation on Authorize decorator and AuthorizeHook, as we need to handle authentication and authorization differently
@@ -20,7 +20,7 @@ import {
 
 export function Authorize(
   scheme: AuthenticationScheme,
-  payload?: AuthPayload
+  payload?: AuthPayload,
 ): Function {
   return function (object: any, methodName?: string) {
     // add hook to global metadata
@@ -45,14 +45,14 @@ export type SchemePayload = {
 export class AuthorizeHookActionHandler {
   getUnauthorizedActionResult(
     _context: SecurityContext<unknown>,
-    _schemePayload: SchemePayload
+    _schemePayload: SchemePayload,
   ) {
     return Promise.resolve(Content({ status: 401 }, 401));
   }
 
   getForbiddenActionResult(
     _context: SecurityContext<unknown>,
-    _schemePayload: SchemePayload
+    _schemePayload: SchemePayload,
   ) {
     return Promise.resolve(Content({ status: 403 }, 403));
   }
@@ -72,15 +72,15 @@ export class AuthorizeHook implements HookTarget<unknown, SchemePayload> {
 
   async onPreAction(
     context: SecurityContext<unknown>,
-    schemePayload: SchemePayload
+    schemePayload: SchemePayload,
   ) {
     const identity = context.security.auth.identity();
 
     if (!identity) {
-      context.response.result =
-        await this.actionHandler.getUnauthorizedActionResult(
+      context.response.result = await this.actionHandler
+        .getUnauthorizedActionResult(
           context,
-          schemePayload
+          schemePayload,
         );
       context.response.setImmediately();
       return;
@@ -91,10 +91,10 @@ export class AuthorizeHook implements HookTarget<unknown, SchemePayload> {
       schemePayload.payload?.roles &&
       !isRolesContains(identity, schemePayload.payload.roles)
     ) {
-      context.response.result =
-        await this.actionHandler.getForbiddenActionResult(
+      context.response.result = await this.actionHandler
+        .getForbiddenActionResult(
           context,
-          schemePayload
+          schemePayload,
         );
       context.response.setImmediately();
       return;
@@ -105,10 +105,10 @@ export class AuthorizeHook implements HookTarget<unknown, SchemePayload> {
       schemePayload.payload?.policy &&
       !(await isPolicyValidResult(context, schemePayload.payload.policy))
     ) {
-      context.response.result =
-        await this.actionHandler.getForbiddenActionResult(
+      context.response.result = await this.actionHandler
+        .getForbiddenActionResult(
           context,
-          schemePayload
+          schemePayload,
         );
       context.response.setImmediately();
       return;
@@ -127,7 +127,7 @@ function isRolesContains(identity: Identity<unknown>, roles: string[]) {
 
 async function isPolicyValidResult(
   context: SecurityContext,
-  policy: AuthPolicy
+  policy: AuthPolicy,
 ) {
   return (await policy(context)) === true;
 }

@@ -1,31 +1,35 @@
 // deno-lint-ignore-file no-explicit-any no-case-declarations no-unused-vars
-import { AppSettings, getMetadataArgsStorage, ObjectKeyAny } from 'https://deno.land/x/alosaur@v0.38.0/mod.ts';
+import {
+  AppSettings,
+  getMetadataArgsStorage,
+  ObjectKeyAny,
+} from "https://deno.land/x/alosaur@v0.38.0/mod.ts";
 
-import { OpenApiBuilder } from 'https://deno.land/x/alosaur@v0.38.0/openapi/builder/openapi-builder.ts';
-import * as oa from 'https://deno.land/x/alosaur@v0.38.0/openapi/builder/openapi-models.ts';
+import { OpenApiBuilder } from "https://deno.land/x/alosaur@v0.38.0/openapi/builder/openapi-builder.ts";
+import * as oa from "https://deno.land/x/alosaur@v0.38.0/openapi/builder/openapi-models.ts";
 import {
   getOpenApiMetadataArgsStorage,
   OpenApiArgsStorage,
-} from 'https://deno.land/x/alosaur@v0.38.0/openapi/metadata/openapi-metadata.storage.ts';
-import { getDenoDoc } from 'https://deno.land/x/alosaur@v0.38.0/openapi/parser/src/deno-doc-reader.ts';
-import { DenoDoc } from 'https://deno.land/x/alosaur@v0.38.0/openapi/parser/src/deno-doc.model.ts';
+} from "https://deno.land/x/alosaur@v0.38.0/openapi/metadata/openapi-metadata.storage.ts";
+import { getDenoDoc } from "https://deno.land/x/alosaur@v0.38.0/openapi/parser/src/deno-doc-reader.ts";
+import { DenoDoc } from "https://deno.land/x/alosaur@v0.38.0/openapi/parser/src/deno-doc.model.ts";
 import {
   getParsedNames,
   getSchemeByDef,
   getShemeByEnumDef,
   ParsedNamesDocMap,
-} from 'https://deno.land/x/alosaur@v0.38.0/openapi/parser/src/utils.ts';
-import { MetadataArgsStorage } from 'https://deno.land/x/alosaur@v0.38.0/src/metadata/metadata.ts';
-import { RouteMetadata } from 'https://deno.land/x/alosaur@v0.38.0/src/metadata/route.ts';
-import { ParamType } from 'https://deno.land/x/alosaur@v0.38.0/src/types/param.ts';
-import { registerAreas } from 'https://deno.land/x/alosaur@v0.38.0/src/utils/register-areas.ts';
-import { registerControllers } from 'https://deno.land/x/alosaur@v0.38.0/src/utils/register-controllers.ts';
+} from "https://deno.land/x/alosaur@v0.38.0/openapi/parser/src/utils.ts";
+import { MetadataArgsStorage } from "https://deno.land/x/alosaur@v0.38.0/src/metadata/metadata.ts";
+import { RouteMetadata } from "https://deno.land/x/alosaur@v0.38.0/src/metadata/route.ts";
+import { ParamType } from "https://deno.land/x/alosaur@v0.38.0/src/types/param.ts";
+import { registerAreas } from "https://deno.land/x/alosaur@v0.38.0/src/utils/register-areas.ts";
+import { registerControllers } from "https://deno.land/x/alosaur@v0.38.0/src/utils/register-controllers.ts";
 import {
   buildSchemaObject,
   exploreClassTags,
   explorePropertyTags,
   exploreResponses,
-} from './route_metadata_explorer.ts';
+} from "./route_metadata_explorer.ts";
 
 /**
  * For testing this builder use this editor:
@@ -76,13 +80,13 @@ export class AlosaurOpenApiBuilder<T> {
   }
 
   public saveToFile(
-    path = './openapi.json',
+    path = "./openapi.json",
   ): AlosaurOpenApiBuilder<T> {
     Deno.writeTextFileSync(path, JSON.stringify(this.getSpec()));
     return this;
   }
 
-  public saveDenoDocs(path = './docs.json'): AlosaurOpenApiBuilder<T> {
+  public saveDenoDocs(path = "./docs.json"): AlosaurOpenApiBuilder<T> {
     Deno.writeTextFileSync(path, JSON.stringify(this.denoDocs));
     return this;
   }
@@ -108,8 +112,8 @@ export class AlosaurOpenApiBuilder<T> {
     const operation: oa.OperationObject = {
       tags: tags.length > 0 ? tags : [controllerClassName], // fallback to controller name
       responses: Object.keys(responses).length ? responses : {
-        '200': {
-          description: '',
+        "200": {
+          description: "",
         },
       },
     };
@@ -125,8 +129,8 @@ export class AlosaurOpenApiBuilder<T> {
           operation.parameters.push({
             // @ts-ignore: Object is possibly 'null'.
             name: param.name,
-            in: 'query',
-            schema: { type: 'string' },
+            in: "query",
+            schema: { type: "string" },
           });
           break;
 
@@ -136,8 +140,8 @@ export class AlosaurOpenApiBuilder<T> {
             // @ts-ignore: Object is possibly 'null'.
             name: param.name,
             required: true,
-            in: 'path',
-            schema: { type: 'string' },
+            in: "path",
+            schema: { type: "string" },
           });
           break;
 
@@ -146,8 +150,8 @@ export class AlosaurOpenApiBuilder<T> {
           operation.parameters.push({
             // @ts-ignore: Object is possibly 'null'.
             name: param.name,
-            in: 'cookie',
-            schema: { type: 'string' },
+            in: "cookie",
+            schema: { type: "string" },
           });
           break;
         case ParamType.Body:
@@ -157,7 +161,7 @@ export class AlosaurOpenApiBuilder<T> {
             operation.requestBody = {
               required: true,
               content: {
-                'application/json': {
+                "application/json": {
                   schema: {
                     $ref: GetShemeLinkAndRegister(param.transform.name),
                   },
@@ -205,7 +209,7 @@ export class AlosaurOpenApiBuilder<T> {
     const namesSets = getOpenApiMetadataArgsStorage().usableClassNamesSet;
 
     if (!this.namesDenoDocMap) {
-      throw new Error('Run addDenoDocs before start scheme components!');
+      throw new Error("Run addDenoDocs before start scheme components!");
     }
 
     this.namesDenoDocMap!.classes.forEach((classObj) => {
@@ -240,5 +244,5 @@ export class AlosaurOpenApiBuilder<T> {
  */
 function GetShemeLinkAndRegister(name: string): string {
   getOpenApiMetadataArgsStorage().usableClassNamesSet.add(name);
-  return '#/components/schemas/' + name;
+  return "#/components/schemas/" + name;
 }

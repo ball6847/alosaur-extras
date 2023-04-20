@@ -14,7 +14,9 @@ export class ServiceError extends Error {
   httpCode: number;
   details?: any;
 
-  constructor(err: { code: string; message: string; httpCode: number; details?: any }) {
+  constructor(
+    err: { code: string; message: string; httpCode: number; details?: any },
+  ) {
     super(err.message);
     this.code = err.code;
     this.message = err.message;

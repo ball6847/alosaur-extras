@@ -6,20 +6,20 @@ import { SchemePayload, SecurityContext } from "./security/mod.ts";
 export class AuthorizationActionHandler {
   getUnauthorizedActionResult(
     _context: SecurityContext<unknown>,
-    _schemePayload: SchemePayload
+    _schemePayload: SchemePayload,
   ) {
     return Promise.resolve(Unauthorized());
   }
 
   getForbiddenActionResult(
     _context: SecurityContext<unknown>,
-    _schemePayload: SchemePayload
+    _schemePayload: SchemePayload,
   ) {
     return Promise.resolve(
       Forbidden(
         "INSUFFICIENT_PERMISSION",
-        "Access denied due to insufficient permissions"
-      )
+        "Access denied due to insufficient permissions",
+      ),
     );
   }
 }

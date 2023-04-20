@@ -29,11 +29,11 @@ export interface ApiResponseSchemaHost
 export type ApiResponseOptions = ApiResponseMetadata | ApiResponseSchemaHost;
 
 export function ApiResponse(
-  options: ApiResponseOptions
+  options: ApiResponseOptions,
 ): MethodDecorator & ClassDecorator {
   const [type, isArray] = getTypeIsArrayTuple(
     (options as ApiResponseMetadata).type,
-    (options as ApiResponseMetadata).isArray as any
+    (options as ApiResponseMetadata).isArray as any,
   );
 
   (options as ApiResponseMetadata).type = type;
@@ -46,7 +46,7 @@ export function ApiResponse(
   return (
     target: object,
     key?: string | symbol,
-    descriptor?: TypedPropertyDescriptor<any>
+    descriptor?: TypedPropertyDescriptor<any>,
   ): any => {
     if (descriptor) {
       const responses =
@@ -57,19 +57,19 @@ export function ApiResponse(
           ...responses,
           ...groupedMetadata,
         },
-        descriptor.value
+        descriptor.value,
       );
       return descriptor;
     }
-    const responses =
-      Reflect.getMetadata(DECORATORS.API_RESPONSE, target) || {};
+    const responses = Reflect.getMetadata(DECORATORS.API_RESPONSE, target) ||
+      {};
     Reflect.defineMetadata(
       DECORATORS.API_RESPONSE,
       {
         ...responses,
         ...groupedMetadata,
       },
-      target
+      target,
     );
     return target;
   };
@@ -136,7 +136,7 @@ export const ApiNotFoundResponse = (options: ApiResponseOptions = {}) =>
   });
 
 export const ApiInternalServerErrorResponse = (
-  options: ApiResponseOptions = {}
+  options: ApiResponseOptions = {},
 ) =>
   ApiResponse({
     ...options,
@@ -192,7 +192,7 @@ export const ApiNotImplementedResponse = (options: ApiResponseOptions = {}) =>
   });
 
 export const ApiPreconditionFailedResponse = (
-  options: ApiResponseOptions = {}
+  options: ApiResponseOptions = {},
 ) =>
   ApiResponse({
     ...options,
@@ -212,7 +212,7 @@ export const ApiRequestTimeoutResponse = (options: ApiResponseOptions = {}) =>
   });
 
 export const ApiServiceUnavailableResponse = (
-  options: ApiResponseOptions = {}
+  options: ApiResponseOptions = {},
 ) =>
   ApiResponse({
     ...options,
@@ -220,7 +220,7 @@ export const ApiServiceUnavailableResponse = (
   });
 
 export const ApiUnprocessableEntityResponse = (
-  options: ApiResponseOptions = {}
+  options: ApiResponseOptions = {},
 ) =>
   ApiResponse({
     ...options,
@@ -228,7 +228,7 @@ export const ApiUnprocessableEntityResponse = (
   });
 
 export const ApiUnsupportedMediaTypeResponse = (
-  options: ApiResponseOptions = {}
+  options: ApiResponseOptions = {},
 ) =>
   ApiResponse({
     ...options,

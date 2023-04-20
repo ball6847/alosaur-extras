@@ -7,7 +7,7 @@ type TransformFactoryOption = {
 };
 
 export function bodyClassTransformer(
-  opt: TransformFactoryOption = { validate: true }
+  opt: TransformFactoryOption = { validate: true },
 ) {
   return async (transform: ClassConstructor<unknown>, body: unknown) => {
     // deno-lint-ignore no-explicit-any

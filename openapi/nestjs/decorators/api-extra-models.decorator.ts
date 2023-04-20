@@ -1,6 +1,6 @@
 // deno-lint-ignore-file ban-types no-explicit-any
-import { DECORATORS } from '../constants.ts';
-import { Reflect } from '../reflect.ts';
+import { DECORATORS } from "../constants.ts";
+import { Reflect } from "../reflect.ts";
 
 export function ApiExtraModels(...models: Function[]) {
   return (
@@ -9,7 +9,8 @@ export function ApiExtraModels(...models: Function[]) {
     descriptor?: TypedPropertyDescriptor<any>,
   ): any => {
     if (descriptor) {
-      const extraModels = Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, descriptor.value) ||
+      const extraModels =
+        Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, descriptor.value) ||
         [];
       Reflect.defineMetadata(
         DECORATORS.API_EXTRA_MODELS,
@@ -19,7 +20,8 @@ export function ApiExtraModels(...models: Function[]) {
       return descriptor;
     }
 
-    const extraModels = Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, target) || [];
+    const extraModels =
+      Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, target) || [];
     Reflect.defineMetadata(
       DECORATORS.API_EXTRA_MODELS,
       [...extraModels, ...models],

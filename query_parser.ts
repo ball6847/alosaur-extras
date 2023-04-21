@@ -1,5 +1,4 @@
-import { memoizy } from "./deps.ts";
-import { ApiProperty } from "./openapi/nestjs/decorators/api-property.decorator.ts";
+import { ApiProperty, memoizy } from "./deps.ts";
 
 export type FieldType = "number" | "string" | "boolean" | "enum";
 
@@ -26,10 +25,13 @@ export interface FieldInfo {
 
 export interface EntityContext {
   fields?: Record<string, FieldInfo>;
-  related?: Record<string, {
-    entity: string;
-    fields: string[];
-  }>;
+  related?: Record<
+    string,
+    {
+      entity: string;
+      fields: string[];
+    }
+  >;
   defaultLimit?: number;
   maxLimit?: number;
   allowNoLimit?: boolean;
@@ -83,7 +85,7 @@ const defaultOperators: {
 };
 
 const getDefaultContext = (
-  context: Partial<EntityContext>,
+  context: Partial<EntityContext>
 ): Required<EntityContext> => {
   const defaultContext: Required<EntityContext> = {
     fields: {},
@@ -112,12 +114,12 @@ export const parseQueryString = memoizy(
       metadata.includes = parseIncludes(query, option);
     }
     return metadata;
-  },
+  }
 );
 
 export function parsePagination(
   query: URLSearchParams,
-  option: EntityContext,
+  option: EntityContext
 ): MetaData["pagination"] {
   const context = getDefaultContext(option);
   let page = Number(query.get("page")) || 1;
@@ -163,14 +165,14 @@ export function parseFilters(query: URLSearchParams, option: EntityContext) {
       const operator = (match[2] ?? "eq") as FilterOperator;
       const fieldInfo = context.fields[field];
       if (fieldInfo && fieldInfo.filterable) {
-        const supported = fieldInfo.supportedOperators ??
-          defaultOperators[fieldInfo.type];
+        const supported =
+          fieldInfo.supportedOperators ?? defaultOperators[fieldInfo.type];
         if (supported.includes(operator)) {
           filter[field] = filter[field] || {};
           if (operator === "in" || operator === "nin") {
-            filter[field][operator] = value.split(",").map((v) =>
-              parsePrimitive(v, fieldInfo.type)
-            );
+            filter[field][operator] = value
+              .split(",")
+              .map((v) => parsePrimitive(v, fieldInfo.type));
           } else {
             filter[field][operator] = parsePrimitive(value, fieldInfo.type);
           }
@@ -183,7 +185,7 @@ export function parseFilters(query: URLSearchParams, option: EntityContext) {
 
 function parsePrimitive(
   value: string,
-  type: FieldType,
+  type: FieldType
 ): string | number | boolean {
   switch (type) {
     case "number":
@@ -215,7 +217,7 @@ export function parseSorting(query: URLSearchParams, option: EntityContext) {
 
 export function parseIncludes(
   query: URLSearchParams,
-  option: EntityContext,
+  option: EntityContext
 ): MetaData["includes"] {
   const context = getDefaultContext(option);
   const relatedFields = context.related ?? {};
@@ -231,6 +233,6 @@ export function parseIncludes(
       }
       return acc;
     },
-    {},
+    {}
   );
 }

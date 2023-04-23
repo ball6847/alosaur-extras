@@ -6,15 +6,31 @@ type TransformFactoryOption = {
   validate: boolean;
 };
 
+/**
+ * transform function shortcut to
+ *
+ * plainToInstance(cls, plain, { excludeExtraneousValues: true, enableImplicitConversion: true });
+ *
+ * so we don't have to keep passing the same options every time
+ *
+ * @param cls
+ * @param plain
+ */
+export function transform<T, V>(cls: ClassConstructor<T>, plain: V[]): T[];
+export function transform<T, V>(cls: ClassConstructor<T>, plain: V): T;
+export function transform<T, V>(cls: ClassConstructor<T>, plain: V): T {
+  return plainToInstance(cls, plain, {
+    excludeExtraneousValues: true,
+    enableImplicitConversion: true,
+  });
+}
+
 export function bodyClassTransformer(
-  opt: TransformFactoryOption = { validate: true },
+  opt: TransformFactoryOption = { validate: true }
 ) {
-  return async (transform: ClassConstructor<unknown>, body: unknown) => {
+  return async (cls: ClassConstructor<unknown>, body: unknown) => {
     // deno-lint-ignore no-explicit-any
-    let instance: any = plainToInstance(transform, body, {
-      enableImplicitConversion: true,
-      excludeExtraneousValues: true,
-    });
+    let instance: any = transform(cls, body);
     if (opt.validate) {
       const errors = await validate(instance);
       if (errors.length > 0) {

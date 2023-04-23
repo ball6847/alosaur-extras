@@ -14,6 +14,22 @@ function isServiceErrorLike(error: any): error is ServiceErrorLike {
 
 type Err = Error | ServiceErrorLike | ActionResult;
 
+/**
+ * Simple global error handler for alosaur
+ *
+ * This allow us to
+ * - throw `ServiceError` which designed to be used in service layer (this include special `httpCode` so the error can be handled properly)
+ * - throw `ActionResult` which allow us to return custom result that not necessarily an error
+ * - throw `Error` which will be handled as `500` Internal Server Error
+ * - throw anything else which will be handled as `500` Internal Server Error
+ *
+ * This function will also log error if the result is `5XX`
+ *
+ * TODO: make logger to be configurable (eg. from context, default alosaur container or through higher order function upon registration)
+ *
+ * @param context Alosaur HttpContext
+ * @param err Error to be handled
+ */
 export function globalErrorHandler(context: HttpContext, err: Err) {
   if (isServiceErrorLike(err)) {
     const response = {
@@ -28,7 +44,6 @@ export function globalErrorHandler(context: HttpContext, err: Err) {
   // log error if result is server error (5XX)
   if (context.response.result.status >= 500) {
     // just use console for now
-    // TODO: properly use logger from somewhere else, eg. context or default alosaur container
     console.error(err);
   }
   context.response.setImmediately();

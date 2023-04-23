@@ -1,103 +1,99 @@
-import { assertExists } from "https://deno.land/std/testing/asserts.ts";
-import { HttpContext, HttpResponse } from "./deps.ts";
-import { assertEquals, assertThrowsAsync } from "./deps_test.ts";
-import { globalErrorHandler } from "./globalErrorHandler.ts";
+// deno-lint-ignore-file no-explicit-any
 
-Deno.test("globalErrorHandler with ServiceErrorLike", async () => {
-  const context = new HttpContext({});
-  const error = {
+import { ActionResult, Content, HttpContext } from "./deps.ts";
+import { ServiceError } from "./error/service_error.ts";
+import { globalErrorHandler } from "./global_error_handler.ts";
+import { assertEquals, assertSpyCalls, spy } from "./testing/deps.ts";
+
+// make simple context for testing
+const makeContext = () => {
+  return {
+    response: {
+      result: {} as ActionResult,
+      setImmediately: () => undefined,
+    },
+  } as HttpContext;
+};
+
+const textDecoder = new TextDecoder();
+const decode = (body: BufferSource) => JSON.parse(textDecoder.decode(body));
+
+Deno.test("globalErrorHandler with ServiceErrorLike", () => {
+  const context = makeContext();
+
+  const error = new ServiceError({
     code: "ERROR_CODE",
     message: "Error message",
     httpCode: 400,
-  };
+  });
 
-  await globalErrorHandler(context, error);
+  globalErrorHandler(context, error);
 
-  assertEquals(context.response.status, 400);
-  assertEquals(context.response.result, {
-    error: { code: "ERROR_CODE", message: "Error message", details: undefined },
+  const body = decode(context.response.result.body);
+
+  assertEquals(context.response.result.status, 400);
+  assertEquals(body, {
+    error: {
+      code: "ERROR_CODE",
+      message: "Error message",
+    },
   });
 });
 
-Deno.test("globalErrorHandler with ActionResult", async () => {
-  const context = new HttpContext({});
-  const actionResult = {
-    __isActionResult: true,
-    toActionResult: () => {
-      return {
-        status: 200,
-        content: "Action result content",
-      };
-    },
-  };
+Deno.test("globalErrorHandler with ActionResult", () => {
+  const context = makeContext();
+  const actionResult = Content("Action result content", 200);
 
-  await globalErrorHandler(context, actionResult);
+  globalErrorHandler(context, actionResult);
 
-  assertEquals(context.response.status, 200);
-  assertEquals(context.response.result.content, "Action result content");
+  const body = textDecoder.decode(context.response.result.body);
+
+  assertEquals(context.response.result.status, 200);
+  assertEquals(body, "Action result content");
 });
 
-Deno.test("globalErrorHandler with Error", async () => {
-  const context = new HttpContext({});
+Deno.test("globalErrorHandler with Error", () => {
+  const context = makeContext();
+  const consoleSpy = spy(console, "error");
   const error = new Error("Error message");
 
-  await assertThrowsAsync(async () => {
-    await globalErrorHandler(context, error);
-  });
+  globalErrorHandler(context, error);
 
-  assertEquals(context.response.status, 500);
-  assertEquals(context.response.result, {
+  const body = decode(context.response.result.body);
+
+  assertEquals(context.response.result.status, 500);
+  assertEquals(body, {
     error: {
       code: "INTERNAL_SERVER_ERROR",
-      message: "Internal Server Error",
-      details: undefined,
+      message: "Internal server error",
     },
   });
+  // test if console.error is called
+  assertSpyCalls(consoleSpy, 1);
+
+  consoleSpy.restore();
 });
 
-Deno.test("globalErrorHandler with unexpected error format", async () => {
-  const context = new HttpContext({});
+Deno.test("globalErrorHandler with unexpected error format", () => {
+  const context = makeContext();
+  const consoleSpy = spy(console, "error");
   const error = {
     unexpectedField: "unexpected field",
   };
 
-  await assertThrowsAsync(async () => {
-    await globalErrorHandler(context, error as any);
-  });
+  globalErrorHandler(context, error as any);
 
-  assertEquals(context.response.status, 500);
-  assertEquals(context.response.result, {
+  const body = decode(context.response.result.body);
+
+  assertEquals(context.response.result.status, 500);
+  assertEquals(body, {
     error: {
       code: "INTERNAL_SERVER_ERROR",
-      message: "Internal Server Error",
-      details: undefined,
+      message: "Internal server error",
     },
   });
-});
+  // test if console.error is called
+  assertSpyCalls(consoleSpy, 1);
 
-Deno.test("globalErrorHandler logs server errors", () => {
-  const context = new HttpContext({} as any, new HttpResponse());
-  const err = new Error("Internal server error");
-
-  // Set the error status to 500 to trigger error logging
-  err["httpCode"] = 500;
-
-  // Mock console.error to check if it is called
-  const originalConsoleError = console.error;
-  let consoleCalled = false;
-  console.error = () => {
-    consoleCalled = true;
-  };
-
-  globalErrorHandler(context, err);
-
-  // Check that the context response was set and immediately sent
-  assertExists(context.response.result);
-  assertEquals(context.response.isImmediately, true);
-
-  // Check that the error was logged
-  assertEquals(consoleCalled, true);
-
-  // Restore console.error
-  console.error = originalConsoleError;
+  consoleSpy.restore();
 });

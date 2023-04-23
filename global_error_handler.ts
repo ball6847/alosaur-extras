@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { ActionResult, Content, HttpContext, pick } from "./deps.ts";
 import { InternalServerError } from "./response.ts";
 
@@ -7,24 +8,28 @@ type ServiceErrorLike = {
   httpCode: number;
 };
 
-// deno-lint-ignore no-explicit-any
 function isServiceErrorLike(error: any): error is ServiceErrorLike {
   return !!error.code && !!error.message && !!error.httpCode;
 }
 
-export function globalErrorHandler(
-  context: HttpContext,
-  error: Error | ServiceErrorLike | ActionResult,
-) {
-  if (isServiceErrorLike(error)) {
-    context.response.result = Content(
-      { error: pick(error, ["code", "message", "details"]) },
-      error.httpCode,
-    );
-  } else if (!(error instanceof Error) && error.__isActionResult) {
-    context.response.result = error;
+type Err = Error | ServiceErrorLike | ActionResult;
+
+export function globalErrorHandler(context: HttpContext, err: Err) {
+  if (isServiceErrorLike(err)) {
+    const response = {
+      error: pick(err, ["code", "message", "details"]),
+    };
+    context.response.result = Content(response, err.httpCode);
+  } else if (!(err instanceof Error) && err.__isActionResult) {
+    context.response.result = err;
   } else {
     context.response.result = InternalServerError();
+  }
+  // log error if result is server error (5XX)
+  if (context.response.result.status >= 500) {
+    // just use console for now
+    // TODO: properly use logger from somewhere else, eg. context or default alosaur container
+    console.error(err);
   }
   context.response.setImmediately();
 }

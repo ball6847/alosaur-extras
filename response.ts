@@ -1,9 +1,9 @@
-import { Content, humanizeString } from "./deps.ts";
+import { Content, humanizeString } from './deps.ts';
 
 const humanize = (str: string) => {
   const newStr = humanizeString(str)
     .toLowerCase()
-    .replace(/[\-_]+/g, " ")
+    .replace(/[\-_]+/g, ' ')
     .trim();
   return newStr.charAt(0).toUpperCase() + newStr.slice(1);
 };
@@ -11,7 +11,7 @@ const humanize = (str: string) => {
 /**
  * ActionResult for 400
  */
-export function BadRequest(code = "BAD_REQUEST", message?: string) {
+export function BadRequest(code = 'BAD_REQUEST', message?: string) {
   const error = { code, message: message || humanize(code) };
   return Content({ error }, 400);
 }
@@ -19,7 +19,7 @@ export function BadRequest(code = "BAD_REQUEST", message?: string) {
 /**
  * ActionResult for 401
  */
-export function Unauthorized(code = "UNAUTHORIZED", message?: string) {
+export function Unauthorized(code = 'UNAUTHORIZED', message?: string) {
   const error = { code, message: message || humanize(code) };
   return Content({ error }, 401);
 }
@@ -27,7 +27,7 @@ export function Unauthorized(code = "UNAUTHORIZED", message?: string) {
 /**
  * ActionResult for 403
  */
-export function Forbidden(code = "FORBIDDEN", message?: string) {
+export function Forbidden(code = 'FORBIDDEN', message?: string) {
   const error = { code, message: message || humanize(code) };
   return Content({ error }, 403);
 }
@@ -35,7 +35,7 @@ export function Forbidden(code = "FORBIDDEN", message?: string) {
 /**
  * ActionResult for 404
  */
-export function NotFound(code = "NOT_FOUND", message?: string) {
+export function NotFound(code = 'NOT_FOUND', message?: string) {
   const error = { code, message: message || humanize(code) };
   return Content({ error }, 404);
 }
@@ -43,7 +43,7 @@ export function NotFound(code = "NOT_FOUND", message?: string) {
 /**
  * ActionResult for 409
  */
-export function Conflict(code = "CONFLICT", message?: string) {
+export function Conflict(code = 'CONFLICT', message?: string) {
   const error = { code, message: message || humanize(code) };
   return Content({ error }, 409);
 }
@@ -52,7 +52,7 @@ export function Conflict(code = "CONFLICT", message?: string) {
  * ActionResult for 500
  */
 export function InternalServerError(
-  code = "INTERNAL_SERVER_ERROR",
+  code = 'INTERNAL_SERVER_ERROR',
   message?: string,
 ) {
   const error = { code, message: message || humanize(code) };

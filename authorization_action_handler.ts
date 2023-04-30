@@ -1,6 +1,6 @@
-import { Singleton } from "./deps.ts";
-import { Forbidden, Unauthorized } from "./response.ts";
-import { SchemePayload, SecurityContext } from "./security/mod.ts";
+import { Singleton } from './deps.ts';
+import { Forbidden, Unauthorized } from './response.ts';
+import { SchemePayload, SecurityContext } from './security/mod.ts';
 
 @Singleton()
 export class AuthorizationActionHandler {
@@ -17,8 +17,8 @@ export class AuthorizationActionHandler {
   ) {
     return Promise.resolve(
       Forbidden(
-        "INSUFFICIENT_PERMISSION",
-        "Access denied due to insufficient permissions",
+        'INSUFFICIENT_PERMISSION',
+        'Access denied due to insufficient permissions',
       ),
     );
   }

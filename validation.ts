@@ -1,4 +1,4 @@
-import { ValidationError } from "./deps.ts";
+import { ValidationError } from './deps.ts';
 
 export function reduceError(errors: ValidationError[]) {
   return errors.reduce(

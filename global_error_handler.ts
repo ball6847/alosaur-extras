@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
-import { ActionResult, Content, HttpContext, pick } from "./deps.ts";
-import { InternalServerError } from "./response.ts";
+import { ActionResult, Content, HttpContext, pick } from './deps.ts';
+import { InternalServerError } from './response.ts';
 
 type ServiceErrorLike = {
   code: string;
@@ -33,7 +33,7 @@ type Err = Error | ServiceErrorLike | ActionResult;
 export function globalErrorHandler(context: HttpContext, err: Err) {
   if (isServiceErrorLike(err)) {
     const response = {
-      error: pick(err, ["code", "message", "details"]),
+      error: pick(err, ['code', 'message', 'details']),
     };
     context.response.result = Content(response, err.httpCode);
   } else if (!(err instanceof Error) && err.__isActionResult) {

@@ -1,6 +1,6 @@
-import { ClassConstructor, omitBy, plainToInstance, validate } from "./deps.ts";
-import { ServiceError } from "./error/service_error.ts";
-import { reduceError } from "./validation.ts";
+import { ClassConstructor, omitBy, plainToInstance, validate } from './deps.ts';
+import { ServiceError } from './error/service_error.ts';
+import { reduceError } from './validation.ts';
 
 type TransformFactoryOption = {
   validate: boolean;
@@ -26,17 +26,22 @@ export function transform<T, V>(cls: ClassConstructor<T>, plain: V): T {
 }
 
 export function bodyClassTransformer(
-  opt: TransformFactoryOption = { validate: true }
+  opt: TransformFactoryOption = { validate: true },
 ) {
   return async (cls: ClassConstructor<unknown>, body: unknown) => {
+    // TODO: handle different content type
+    // by pass if no class, for example multipart/form-data
+    if (!cls) {
+      return body;
+    }
     // deno-lint-ignore no-explicit-any
     let instance: any = transform(cls, body);
     if (opt.validate) {
       const errors = await validate(instance);
       if (errors.length > 0) {
         throw new ServiceError({
-          code: "VALIDATION_ERROR",
-          message: "Validation error",
+          code: 'VALIDATION_ERROR',
+          message: 'Validation error',
           details: reduceError(errors),
           httpCode: 400,
         });

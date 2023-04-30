@@ -11,7 +11,7 @@ import {
   Identity,
   SecurityContext,
   Singleton,
-} from "../deps.ts";
+} from '../deps.ts';
 
 // Our implementation on Authorize decorator and AuthorizeHook, as we need to handle authentication and authorization differently
 // see https://deno.land/x/alosaur@v0.38.0/src/security/authorization/mod.ts for original implementation
@@ -28,7 +28,7 @@ export function Authorize(
       type: methodName ? BusinessType.Action : BusinessType.Controller,
       object,
       target: object.constructor,
-      method: methodName ? methodName : "",
+      method: methodName ? methodName : '',
       instance: container.resolve(AuthorizeHook),
       payload: { scheme, payload },
     });

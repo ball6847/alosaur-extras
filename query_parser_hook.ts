@@ -1,5 +1,5 @@
-import { HookTarget, HttpContext } from "./deps.ts";
-import { EntityContext, MetaData, parseQueryString } from "./query_parser.ts";
+import { HookTarget, HttpContext } from './deps.ts';
+import { EntityContext, MetaData, parseQueryString } from './query_parser.ts';
 
 export type QueryState = {
   metadata: MetaData;

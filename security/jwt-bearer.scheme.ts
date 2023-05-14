@@ -27,7 +27,12 @@ const DAYS_30 = 30 * 24 * 60 * 60 * 1000;
 
 const AuthorizationHeader = 'Authorization';
 const AcceptHeader = 'Accept';
+<<<<<<< HEAD
 const accepts = ['*/*', 'application/json'];
+=======
+const AcceptTypeJSON = 'application/json';
+const AcceptTypeAny = '*/*';
+>>>>>>> origin/main
 
 export class JwtBearerScheme implements AuthenticationScheme {
   constructor(
@@ -41,6 +46,7 @@ export class JwtBearerScheme implements AuthenticationScheme {
     const headers = context.request.serverRequest.request.headers;
 
     const headAuthorization = headers.get(AuthorizationHeader);
+<<<<<<< HEAD
 
     // TODO: should we really do content negotiation here? need to fill an issue at alosaur
     const headAccept = (headers.get(AcceptHeader) || '*/*')
@@ -51,6 +57,13 @@ export class JwtBearerScheme implements AuthenticationScheme {
       .some((acceptType) => accepts.includes(acceptType));
 
     if (shouldAccept && headAuthorization) {
+=======
+    const headAccept = headers.get(AcceptHeader) || '';
+
+    if (
+      [AcceptTypeJSON, AcceptTypeAny].includes(headAccept) && headAuthorization
+    ) {
+>>>>>>> origin/main
       const token = getBearerToken(headAuthorization);
 
       if (token) {

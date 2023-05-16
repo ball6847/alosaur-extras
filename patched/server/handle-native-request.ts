@@ -14,16 +14,46 @@ import { getStaticFile } from "https://deno.land/x/alosaur@v0.38.0/src/utils/get
 import { hasHooks, hasHooksAction, resolveHooks } from "https://deno.land/x/alosaur@v0.38.0/src/utils/hook.utils.ts";
 
 // Get middlewares in request
-function getMiddlwareByUrl<T>(
+function getMiddlewareByUrl<T>(
   middlewares: MiddlewareMetadataArgs<T>[],
   url: string,
-): any[] {
+): MiddlewareMetadataArgs<T>[] {
   if (middlewares.length === 0) return []; // for perf optimization
   return middlewares.filter((m) => m.route.test(url));
 }
 
+async function runPreRequestMiddlewares(middlewares: MiddlewareMetadataArgs<unknown>[], context: HttpContext) {
+  for (const middleware of middlewares) {
+    middleware.target.onPreRequest && await middleware.target.onPreRequest(context);
+  }
+}
+
+async function runPostRequestMiddlewares(middlewares: MiddlewareMetadataArgs<unknown>[], context: HttpContext) {
+  for (const middleware of middlewares) {
+    // @ts-ignore TODO: fix this, make onPostRequest type available
+    middleware.target.onPostRequest && await middleware.target.onPostRequest(context);
+  }
+}
+
 /**
- * Gets deno native http bindigs
+ * Run all core post request middlewares, regardless of isImmediately flag
+ *
+ * TODO: revise where this should be run, currently run everywhere respondWith() appear
+ * TODO: also implement this in handleLitServer()
+ *
+ * @param middlewares
+ * @param context
+ */
+async function runCorePostRequestMiddlewares(middlewares: MiddlewareMetadataArgs<unknown>[], context: HttpContext) {
+  for (const middleware of middlewares) {
+    // @ts-ignore TODO: fix this, make onCorePostRequest type available
+    middleware.target.onCorePostRequest && await middleware.target.onCorePostRequest(context);
+  }
+}
+
+
+/**
+ * Gets deno native http bindings
  * lite server without: static config, catch requests
  */
 export async function handleNativeServer<TState>(
@@ -74,16 +104,15 @@ async function handleFullServer<TState>(
       HttpContext,
     );
 
-    try {
-      const middlewares = getMiddlwareByUrl(
-        metadata.middlewares,
-        context.request.parserUrl.pathname,
-      );
+    // we need middleware even in error handler
+    const middlewares = getMiddlewareByUrl(
+      metadata.middlewares,
+      context.request.parserUrl.pathname,
+    );
 
+    try {
       // Resolve every pre middleware
-      for (const middleware of middlewares) {
-        await middleware.target.onPreRequest(context);
-      }
+      await runPreRequestMiddlewares(middlewares, context);
 
       if (context.response.isNotRespond()) {
         continue;
@@ -93,6 +122,7 @@ async function handleFullServer<TState>(
         respondWith(
           getResponse(context.response.getMergedResult()),
         );
+        await runCorePostRequestMiddlewares(middlewares, context);
         continue;
       }
 
@@ -103,6 +133,7 @@ async function handleFullServer<TState>(
         respondWith(
           getResponse(context.response.getMergedResult()),
         );
+        await runCorePostRequestMiddlewares(middlewares, context);
         continue;
       }
 
@@ -115,10 +146,11 @@ async function handleFullServer<TState>(
       if (action !== null) {
         const hooks = getHooksFromAction(action);
 
-        // try resolve hooks
+        // try resolve hooks, resolveHooks returns true if isImmediately is set on hook
         if (
           hasHooks(hooks) && await resolveHooks(context, "onPreAction", hooks)
         ) {
+          await runCorePostRequestMiddlewares(middlewares, context);
           continue;
         }
 
@@ -143,16 +175,15 @@ async function handleFullServer<TState>(
             hasHooksAction("onCatchAction", hooks) &&
             await resolveHooks(context, "onCatchAction", hooks)
           ) {
+            await runCorePostRequestMiddlewares(middlewares, context);
             continue;
           } else {
             // Resolve every post middleware if error was not caught
-            for (const middleware of middlewares) {
-              //@ts-ignore
-              await middleware.target.onPostRequest(context);
-            }
+            await runPostRequestMiddlewares(middlewares, context);
 
             if (context.response.isImmediately()) {
               respondWith(getResponse(context.response.getMergedResult()));
+              await runCorePostRequestMiddlewares(middlewares, context);
               continue;
             }
 
@@ -165,23 +196,24 @@ async function handleFullServer<TState>(
           hasHooks(hooks) &&
           await resolveHooks(context, "onPostAction", hooks)
         ) {
+          await runCorePostRequestMiddlewares(middlewares, context);
           continue;
         }
       }
 
       if (context.response.isImmediately()) {
         respondWith(getResponse(context.response.getMergedResult()));
+        await runCorePostRequestMiddlewares(middlewares, context);
         continue;
       }
 
       // Resolve every post middleware
-      for (const middleware of middlewares) {
-        //@ts-ignore
-        await middleware.target.onPostRequest(context);
-      }
+      await runPostRequestMiddlewares(middlewares, context);
 
+      // post request middlewares can set isImmediately to override default 404 response
       if (context.response.isImmediately()) {
         respondWith(getResponse(context.response.getMergedResult()));
+        await runCorePostRequestMiddlewares(middlewares, context);
         continue;
       }
 
@@ -189,22 +221,26 @@ async function handleFullServer<TState>(
         context.response.result = notFoundAction();
 
         respondWith(getResponse(context.response.getMergedResult()));
+        await runCorePostRequestMiddlewares(middlewares, context);
         continue;
       }
 
       respondWith(getResponse(context.response.getMergedResult()));
+      await runCorePostRequestMiddlewares(middlewares, context);
     } catch (error) {
       if (app.globalErrorHandler) {
         app.globalErrorHandler(context, error);
 
         if (context.response.isImmediately()) {
           respondWith(getResponse(context.response.getMergedResult()));
+          await runCorePostRequestMiddlewares(middlewares, context);
           continue;
         }
       }
 
       if (context.response.isImmediately()) {
         respondWith(getResponse(context.response.getMergedResult()));
+        await runCorePostRequestMiddlewares(middlewares, context);
         continue;
       }
 
@@ -213,6 +249,7 @@ async function handleFullServer<TState>(
       }
 
       respondWith(getResponse(Content(error, error.httpCode || 500)));
+      await runCorePostRequestMiddlewares(middlewares, context);
     }
   }
 }

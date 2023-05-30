@@ -159,6 +159,10 @@ export function parseFilters(query: URLSearchParams, option: EntityContext) {
     if (disallow.includes(key)) {
       return;
     }
+    // empty value should be ignored
+    if (!value) {
+      return;
+    }
     const match = key.match(/^(.+?)(?:\[(.+)\])?$/);
     if (match) {
       const field = match[1];

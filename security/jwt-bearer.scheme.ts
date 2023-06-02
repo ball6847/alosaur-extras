@@ -1,16 +1,7 @@
 // deno-lint-ignore-file no-explicit-any no-unused-vars
 import { Algorithm } from 'https://deno.land/x/djwt@v2.3/algorithm.ts';
-import {
-  create,
-  getNumericDate,
-  verify,
-} from 'https://deno.land/x/djwt@v2.3/mod.ts';
-import {
-  AuthenticationScheme,
-  Content,
-  Identity,
-  SecurityContext,
-} from '../deps.ts';
+import { create, getNumericDate, verify } from 'https://deno.land/x/djwt@v2.3/mod.ts';
+import { AuthenticationScheme, Content, Identity, SecurityContext } from '../deps.ts';
 
 /**
  * Modify alosaur jwt-bearer.scheme.ts
@@ -49,12 +40,16 @@ export class JwtBearerScheme implements AuthenticationScheme {
     ) {
       const token = getBearerToken(headAuthorization);
 
-      if (token) {
-        const payload = await safeVerifyJWT(token, this.key);
+      try {
+        if (token) {
+          const payload = await safeVerifyJWT(token, this.key);
 
-        if (payload) {
-          context.security.auth.identity = () => payload;
+          if (payload) {
+            context.security.auth.identity = () => payload;
+          }
         }
+      } catch (error) {
+        // decode or verify error
       }
     }
 

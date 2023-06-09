@@ -2,7 +2,7 @@ import { HookTarget, HttpContext } from './deps.ts';
 import { EntityContext, MetaData, parseQueryString } from './query_parser.ts';
 
 export type QueryState = {
-  metadata: MetaData;
+  metadata: Required<MetaData>;
 };
 
 export class QueryParserHook implements HookTarget<QueryState, EntityContext> {
@@ -14,6 +14,6 @@ export class QueryParserHook implements HookTarget<QueryState, EntityContext> {
       context.request.parserUrl.searchParams.toString(),
       payload,
     );
-    context.state.metadata = metadata;
+    context.state.metadata = metadata as Required<MetaData>;
   }
 }

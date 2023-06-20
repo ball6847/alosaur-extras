@@ -1,8 +1,11 @@
-import { ApiProperty, memoizy } from './deps.ts';
+import { ApiProperty, DateTime, memoizy } from './deps.ts';
+import { ValidationError } from './error/validation_error.ts';
 
-export type FieldType = 'number' | 'string' | 'boolean' | 'enum';
+const datetimeRegex = /^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/;
 
-type PrimitiveType = string | number | boolean;
+export type FieldType = 'number' | 'string' | 'boolean' | 'date' | 'unix';
+
+type PrimitiveType = string | number | boolean | DateTime;
 
 export type FilterOperator =
   | 'eq'
@@ -17,13 +20,22 @@ export type FilterOperator =
 
 export interface FieldInfo {
   type: FieldType;
-  sortable: boolean;
+  sortable?: boolean;
   filterable: boolean;
+  /**
+   * @deprecated use enum instead
+   */
   enumValues?: string[];
+  enum?: Record<string, string>;
   supportedOperators?: FilterOperator[];
+  description?: string;
 }
 
 export interface EntityContext {
+  /**
+   * Register this entity definition to openapi
+   */
+  openapi?: boolean;
   fields?: Record<string, FieldInfo>;
   related?: Record<
     string,
@@ -70,24 +82,32 @@ type SupportedOperator = {
   string: 'eq' | 'ne' | 'match' | 'in' | 'nin';
   enum: 'eq' | 'ne' | 'in' | 'nin';
   boolean: 'eq' | 'ne';
+  date: 'eq' | 'ne' | 'gt' | 'ge' | 'lt' | 'le';
+  unix: 'eq' | 'ne' | 'gt' | 'ge' | 'lt' | 'le';
 };
 
+// default everything to eq
 const defaultOperators: {
   number: SupportedOperator['number'][];
   string: SupportedOperator['string'][];
   enum: SupportedOperator['enum'][];
   boolean: SupportedOperator['boolean'][];
+  date: SupportedOperator['date'][];
+  unix: SupportedOperator['unix'][];
 } = {
-  number: ['eq', 'ne', 'gt', 'ge', 'lt', 'le'],
-  string: ['eq', 'ne', 'match'],
-  enum: ['eq', 'ne'],
-  boolean: ['eq', 'ne'],
+  number: ['eq'],
+  string: ['eq'],
+  enum: ['eq'],
+  boolean: ['eq'],
+  date: ['eq'],
+  unix: ['eq'],
 };
 
-const getDefaultContext = (
+export const getDefaultContext = (
   context: Partial<EntityContext>,
 ): Required<EntityContext> => {
   const defaultContext: Required<EntityContext> = {
+    openapi: false,
     fields: {},
     related: {},
     defaultLimit: 25,
@@ -173,12 +193,14 @@ export function parseFilters(query: URLSearchParams, option: EntityContext) {
           defaultOperators[fieldInfo.type];
         if (supported.includes(operator)) {
           filter[field] = filter[field] || {};
+          // handle list of value for in and nin by splitting the value by comma
           if (operator === 'in' || operator === 'nin') {
             filter[field][operator] = value
               .split(',')
-              .map((v) => parsePrimitive(v, fieldInfo.type));
+              .map((v) => parsePrimitive(v, field, fieldInfo));
           } else {
-            filter[field][operator] = parsePrimitive(value, fieldInfo.type);
+            // handle single value operator
+            filter[field][operator] = parsePrimitive(value, field, fieldInfo);
           }
         }
       }
@@ -187,15 +209,75 @@ export function parseFilters(query: URLSearchParams, option: EntityContext) {
   return filter;
 }
 
+function isValidNumber(val: number) {
+  if (val < 0 || isNaN(val) || val > Number.MAX_SAFE_INTEGER) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Parse the value using the configured type
+ *
+ * If the field is invalid, throw a ValidationError
+ */
 function parsePrimitive(
   value: string,
-  type: FieldType,
-): string | number | boolean {
-  switch (type) {
-    case 'number':
-      return Number(value);
+  name: string,
+  field: FieldInfo,
+): string | number | boolean | DateTime {
+  switch (field.type) {
+    // parse number, if it could be converted to a valid number
+    case 'number': {
+      const n = Number(value);
+      if (!isValidNumber(n)) {
+        throw new ValidationError(`${n} is not a valid number for ${name}`);
+      }
+      return n;
+    }
+
+    // any string refer to truthy value is ok
     case 'boolean':
       return ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+
+    // parse number as unix timestamp to luxon DateTime
+    case 'unix': {
+      const n = Number(value);
+      if (!isValidNumber(n)) {
+        throw new ValidationError(`${value} is not a valid number for ${name}`);
+      }
+      const dt = DateTime.fromMillis(n * 1000);
+      if (!dt.isValid) {
+        throw new ValidationError(
+          `${value} could not be parsed as unix timestamp for ${name}, Reason: ${dt.invalidReason}`,
+        );
+      }
+      return dt;
+    }
+
+    // parse string as ISO8601 or SQL datetime to luxon DateTime
+    case 'date': {
+      const dt = datetimeRegex.test(value) ? DateTime.fromSQL(value) : DateTime.fromISO(value);
+      if (!dt.isValid) {
+        throw new ValidationError(
+          `${value} could not be parsed as date for ${name}, Reason: ${dt.invalidReason}`,
+        );
+      }
+      return dt;
+    }
+
+    case 'string':
+      // enum string type
+      if (field.enum && !Object.values(field.enum).includes(value)) {
+        const allowed = Object.values(field.enum).join(', ');
+        throw new ValidationError(
+          `${value} is not a valid value for ${name}, valid values are: ${allowed}`,
+        );
+      }
+      // any string
+      return value;
+
+    // anything else, just return the value
     default:
       return value;
   }

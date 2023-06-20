@@ -8,6 +8,7 @@ export {
   type HookTarget,
   HttpContext,
   Singleton,
+  UseHook,
 } from 'https://deno.land/x/alosaur@v0.38.0/mod.ts';
 export { type default as InjectionToken } from 'https://deno.land/x/alosaur@v0.38.0/src/injection/providers/injection-token.ts';
 export { defineInjectionTokenMetadata } from 'https://deno.land/x/alosaur@v0.38.0/src/injection/reflection-helpers.ts';

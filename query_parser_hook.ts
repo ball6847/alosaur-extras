@@ -1,5 +1,4 @@
-import { UseHook } from 'https://deno.land/x/alosaur@v0.38.0/mod.ts';
-import { ApiQuery, HookTarget, HttpContext } from './deps.ts';
+import { ApiQuery, HookTarget, HttpContext, UseHook } from './deps.ts';
 import { EntityContext, getDefaultContext, MetaData, parseQueryString } from './query_parser.ts';
 
 export type QueryState = {

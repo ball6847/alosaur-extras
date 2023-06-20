@@ -123,10 +123,7 @@ export const parseQueryString = memoizy(
     const metadata: MetaData = {
       pagination: parsePagination(query, option),
     };
-    const filter = parseFilters(query, option);
-    if (Object.keys(filter).length > 0) {
-      metadata.filter = filter;
-    }
+    metadata.filter = parseFilters(query, option);
     if (query.has('sort')) {
       metadata.sort = parseSorting(query, option);
     }

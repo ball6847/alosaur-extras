@@ -18,8 +18,6 @@ const DAYS_30 = 30 * 24 * 60 * 60 * 1000;
 
 const AuthorizationHeader = 'Authorization';
 const AcceptHeader = 'Accept';
-const AcceptTypeJSON = 'application/json';
-const AcceptTypeAny = '*/*';
 
 export class JwtBearerScheme implements AuthenticationScheme {
   constructor(
@@ -35,9 +33,7 @@ export class JwtBearerScheme implements AuthenticationScheme {
     const headAuthorization = headers.get(AuthorizationHeader);
     const headAccept = headers.get(AcceptHeader) || '';
 
-    if (
-      [AcceptTypeJSON, AcceptTypeAny].includes(headAccept) && headAuthorization
-    ) {
+    if (isJsonAcceptHeader(headAccept) && headAuthorization) {
       const token = getBearerToken(headAuthorization);
 
       try {
@@ -49,6 +45,7 @@ export class JwtBearerScheme implements AuthenticationScheme {
           }
         }
       } catch (error) {
+        // console.log(error);
         // decode or verify error
       }
     }
@@ -113,4 +110,15 @@ async function safeVerifyJWT(
   // const [ header, payload, signature ] = decode(jwt);
 
   return await verify(jwt, key);
+}
+
+function isJsonAcceptHeader(acceptHeader: string): boolean {
+  const acceptedTypes = acceptHeader.split(',');
+  for (const acceptType of acceptedTypes) {
+    const type = acceptType.trim();
+    if (type === 'application/json' || type === '*/*') {
+      return true;
+    }
+  }
+  return false;
 }

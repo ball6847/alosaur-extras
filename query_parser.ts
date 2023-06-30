@@ -44,6 +44,13 @@ export interface EntityContext {
       fields: string[];
     }
   >;
+  /**
+   * default sort option, as key-value pair where key is field name and value is 'asc' or 'desc'
+   * the field should ne listed in `fields` property with `sortable` set to true
+   *
+   * only take effect when no ?sort is provided in query string
+   */
+  defaultSort?: Record<string, 'asc' | 'desc'>;
   defaultLimit?: number;
   maxLimit?: number;
   allowNoLimit?: boolean;
@@ -110,6 +117,7 @@ export const getDefaultContext = (
     openapi: false,
     fields: {},
     related: {},
+    defaultSort: {},
     defaultLimit: 25,
     maxLimit: 100,
     allowNoLimit: true,
@@ -124,9 +132,7 @@ export const parseQueryString = memoizy(
       pagination: parsePagination(query, option),
     };
     metadata.filter = parseFilters(query, option);
-    if (query.has('sort')) {
-      metadata.sort = parseSorting(query, option);
-    }
+    metadata.sort = parseSorting(query, option);
     if (query.has('includes')) {
       metadata.includes = parseIncludes(query, option);
     }
@@ -295,7 +301,7 @@ export function parseSorting(query: URLSearchParams, option: EntityContext) {
       }
     }
   }
-  return sort;
+  return Object.keys(sort).length > 0 ? sort : context.defaultSort;
 }
 
 export function parseIncludes(

@@ -84,6 +84,20 @@ export function QueryParser(payload: EntityContext) {
           }
         }
       }
+
+      const sortable = Object.keys(config.fields)
+        .filter((key) => config.fields[key].sortable);
+
+      if (sortable.length > 0) {
+        ApiQuery({
+          name: 'sort',
+          type: String,
+          required: false,
+          description:
+            'Sort option, prefix the key with <code>-</code> for descending order, separate keys by <code>,</code>\n\n*Example*: <code>-name,age</code>\n\n*Available keys*: ' +
+            sortable.map((k) => `<code>${k}</code>`).join(', '),
+        })(target, propertyKey, descriptor);
+      }
     }
   };
 }

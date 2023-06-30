@@ -1,4 +1,4 @@
-export { ApiProperty, ApiQuery } from 'https://cdn.jsdelivr.net/gh/ball6847/alosaur-openapi@0.1.4/mod.ts';
+export { ApiProperty, ApiQuery } from 'https://cdn.jsdelivr.net/gh/ball6847/alosaur-openapi@0.1.5/mod.ts';
 export {
   type ActionResult,
   BusinessType,

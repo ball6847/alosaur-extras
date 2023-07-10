@@ -102,10 +102,10 @@ async function handleFullServer<TState>(
     //   return respondWithWrapper(request.respondWith, conn)(res);
     // };
 
-    metadata.container.register(SERVER_REQUEST, { useValue: request });
-    const context = metadata.container.resolve<HttpContext<TState>>(
-      HttpContext,
-    );
+    const scoped = metadata.container.createChildContainer();
+    scoped.register(SERVER_REQUEST, { useValue: request });
+
+    const context = scoped.resolve<HttpContext<TState>>(HttpContext);
 
     // we need middleware even in error handler
     const middlewares = getMiddlewareByUrl(
@@ -116,7 +116,7 @@ async function handleFullServer<TState>(
     // TODO: we need to confirm this doesn't hurt performance as we include context and middleware in the handler, especially memory leak
     const respondWith = async (res?: Response | Promise<Response>): Promise<void> => {
       await runCorePostRequestMiddlewares(middlewares, context);
-      return await respondWithWrapper(request.respondWith, conn)(getResponse(context.response.getMergedResult()));
+      await respondWithWrapper(request.respondWith, conn)(getResponse(context.response.getMergedResult()));
     };
 
     try {

@@ -7,6 +7,8 @@ export {
   getMetadataArgsStorage,
   type HookTarget,
   HttpContext,
+  Middleware,
+  type PreRequestMiddleware,
   Singleton,
   UseHook,
 } from 'https://deno.land/x/alosaur@v0.38.0/mod.ts';

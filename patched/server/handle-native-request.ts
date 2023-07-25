@@ -12,6 +12,7 @@ import { getAction } from 'https://deno.land/x/alosaur@v0.38.0/src/route/get-act
 import { getHooksFromAction } from 'https://deno.land/x/alosaur@v0.38.0/src/route/get-hooks.ts';
 import { getStaticFile } from 'https://deno.land/x/alosaur@v0.38.0/src/utils/get-static-file.ts';
 import { hasHooks, hasHooksAction } from 'https://deno.land/x/alosaur@v0.38.0/src/utils/hook.utils.ts';
+import { contextStorage } from '../../async_storage.ts';
 import { resolveHooks } from './hooks.ts';
 
 // Get middlewares in request
@@ -98,169 +99,167 @@ async function handleFullServer<TState>(
 ) {
   const requests = Deno.serveHttp(conn);
   for await (const request of requests) {
-    // const respondWith = (res: Response | Promise<Response>): Promise<void> => {
-    //   return respondWithWrapper(request.respondWith, conn)(res);
-    // };
-
     const scoped = metadata.container.createChildContainer();
     scoped.register(SERVER_REQUEST, { useValue: request });
 
     const context = scoped.resolve<HttpContext<TState>>(HttpContext);
 
-    // we need middleware even in error handler
-    const middlewares = getMiddlewareByUrl(
-      metadata.middlewares,
-      context.request.parserUrl.pathname,
-    );
-
-    // TODO: we need to confirm this doesn't hurt performance as we include context and middleware in the handler, especially memory leak
-    const respondWith = async (res?: Response | Promise<Response>): Promise<void> => {
-      await runCorePostRequestMiddlewares(middlewares, context);
-      await respondWithWrapper(request.respondWith, conn)(getResponse(context.response.getMergedResult()));
-    };
-
-    try {
-      // Resolve every pre middleware
-      await runPreRequestMiddlewares(middlewares, context);
-
-      if (context.response.isNotRespond()) {
-        continue;
-      }
-
-      if (context.response.isImmediately()) {
-        respondWith(
-          getResponse(context.response.getMergedResult()),
-        );
-        // await runCorePostRequestMiddlewares(middlewares, context);
-        continue;
-      }
-
-      // try getting static file
-      if (
-        app.staticConfig && await getStaticFile(context, app.staticConfig)
-      ) {
-        respondWith(
-          getResponse(context.response.getMergedResult()),
-        );
-        // await runCorePostRequestMiddlewares(middlewares, context);
-        continue;
-      }
-
-      const action = getAction(
-        app.routes,
-        context.request.method,
-        context.request.url,
+    contextStorage.run(context, async () => {
+      // we need middleware even in error handler
+      const middlewares = getMiddlewareByUrl(
+        metadata.middlewares,
+        context.request.parserUrl.pathname,
       );
 
-      if (action !== null) {
-        const hooks = getHooksFromAction(action);
+      // TODO: we need to confirm this doesn't hurt performance as we include context and middleware in the handler, especially memory leak
+      const respondWith = async (res?: Response | Promise<Response>): Promise<void> => {
+        await runCorePostRequestMiddlewares(middlewares, context);
+        await respondWithWrapper(request.respondWith, conn)(getResponse(context.response.getMergedResult()));
+      };
 
-        // try resolve hooks, resolveHooks returns true if isImmediately is set on hook
-        if (
-          hasHooks(hooks) && await resolveHooks(context, 'onPreAction', respondWith, hooks)
-        ) {
-          // await runCorePostRequestMiddlewares(middlewares, context);
-          // respondWith(getResponse(context.response.getMergedResult()));
-          continue;
+      try {
+        // Resolve every pre middleware
+        await runPreRequestMiddlewares(middlewares, context);
+
+        if (context.response.isNotRespond()) {
+          return;
         }
 
-        try {
-          // Get arguments in this action
-          const args = await getActionParams(
-            context,
-            action,
-            app.transformConfigMap,
+        if (context.response.isImmediately()) {
+          respondWith(
+            getResponse(context.response.getMergedResult()),
           );
+          // await runCorePostRequestMiddlewares(middlewares, context);
+          return;
+        }
 
-          // Get Action result from controller method
-          context.response.result = await action.target[action.action](
-            ...args,
+        // try getting static file
+        if (
+          app.staticConfig && await getStaticFile(context, app.staticConfig)
+        ) {
+          respondWith(
+            getResponse(context.response.getMergedResult()),
           );
-        } catch (error) {
-          context.response.error = error;
+          // await runCorePostRequestMiddlewares(middlewares, context);
+          return;
+        }
+
+        const action = getAction(
+          app.routes,
+          context.request.method,
+          context.request.url,
+        );
+
+        if (action !== null) {
+          const hooks = getHooksFromAction(action);
+
+          // try resolve hooks, resolveHooks returns true if isImmediately is set on hook
+          if (
+            hasHooks(hooks) && await resolveHooks(context, 'onPreAction', respondWith, hooks)
+          ) {
+            // await runCorePostRequestMiddlewares(middlewares, context);
+            // respondWith(getResponse(context.response.getMergedResult()));
+            return;
+          }
+
+          try {
+            // Get arguments in this action
+            const args = await getActionParams(
+              context,
+              action,
+              app.transformConfigMap,
+            );
+
+            // Get Action result from controller method
+            context.response.result = await action.target[action.action](
+              ...args,
+            );
+          } catch (error) {
+            context.response.error = error;
+
+            // try resolve hooks
+            if (
+              hasHooks(hooks) &&
+              hasHooksAction('onCatchAction', hooks) &&
+              await resolveHooks(context, 'onCatchAction', respondWith, hooks)
+            ) {
+              // await runCorePostRequestMiddlewares(middlewares, context);
+              return;
+            } else {
+              // Resolve every post middleware if error was not caught
+              await runPostRequestMiddlewares(middlewares, context);
+
+              if (context.response.isImmediately()) {
+                respondWith(getResponse(context.response.getMergedResult()));
+                // await runCorePostRequestMiddlewares(middlewares, context);
+                return;
+              }
+
+              throw error;
+            }
+          }
 
           // try resolve hooks
           if (
             hasHooks(hooks) &&
-            hasHooksAction('onCatchAction', hooks) &&
-            await resolveHooks(context, 'onCatchAction', respondWith, hooks)
+            await resolveHooks(context, 'onPostAction', respondWith, hooks)
           ) {
             // await runCorePostRequestMiddlewares(middlewares, context);
-            continue;
-          } else {
-            // Resolve every post middleware if error was not caught
-            await runPostRequestMiddlewares(middlewares, context);
-
-            if (context.response.isImmediately()) {
-              respondWith(getResponse(context.response.getMergedResult()));
-              // await runCorePostRequestMiddlewares(middlewares, context);
-              continue;
-            }
-
-            throw error;
+            return;
           }
         }
 
-        // try resolve hooks
-        if (
-          hasHooks(hooks) &&
-          await resolveHooks(context, 'onPostAction', respondWith, hooks)
-        ) {
+        if (context.response.isImmediately()) {
+          respondWith(getResponse(context.response.getMergedResult()));
           // await runCorePostRequestMiddlewares(middlewares, context);
-          continue;
+          return;
         }
-      }
 
-      if (context.response.isImmediately()) {
-        respondWith(getResponse(context.response.getMergedResult()));
-        // await runCorePostRequestMiddlewares(middlewares, context);
-        continue;
-      }
+        // Resolve every post middleware
+        await runPostRequestMiddlewares(middlewares, context);
 
-      // Resolve every post middleware
-      await runPostRequestMiddlewares(middlewares, context);
+        // post request middlewares can set isImmediately to override default 404 response
+        if (context.response.isImmediately()) {
+          respondWith(getResponse(context.response.getMergedResult()));
+          // await runCorePostRequestMiddlewares(middlewares, context);
+          return;
+        }
 
-      // post request middlewares can set isImmediately to override default 404 response
-      if (context.response.isImmediately()) {
-        respondWith(getResponse(context.response.getMergedResult()));
-        // await runCorePostRequestMiddlewares(middlewares, context);
-        continue;
-      }
+        if (context.response.result === undefined) {
+          context.response.result = notFoundAction();
 
-      if (context.response.result === undefined) {
-        context.response.result = notFoundAction();
+          respondWith(getResponse(context.response.getMergedResult()));
+          // await runCorePostRequestMiddlewares(middlewares, context);
+          return;
+        }
 
         respondWith(getResponse(context.response.getMergedResult()));
         // await runCorePostRequestMiddlewares(middlewares, context);
-        continue;
-      }
+      } catch (error) {
+        if (app.globalErrorHandler) {
+          app.globalErrorHandler(context, error);
 
-      respondWith(getResponse(context.response.getMergedResult()));
-      // await runCorePostRequestMiddlewares(middlewares, context);
-    } catch (error) {
-      if (app.globalErrorHandler) {
-        app.globalErrorHandler(context, error);
+          if (context.response.isImmediately()) {
+            // await runCorePostRequestMiddlewares(middlewares, context);
+            respondWith(getResponse(context.response.getMergedResult()));
+            return;
+          }
+        }
 
         if (context.response.isImmediately()) {
-          // await runCorePostRequestMiddlewares(middlewares, context);
           respondWith(getResponse(context.response.getMergedResult()));
-          continue;
+          // await runCorePostRequestMiddlewares(middlewares, context);
+          return;
         }
-      }
 
-      if (context.response.isImmediately()) {
-        respondWith(getResponse(context.response.getMergedResult()));
+        if (!(error instanceof HttpError)) {
+          console.error(error);
+        }
+
+        respondWith(getResponse(Content(error, error.httpCode || 500)));
         // await runCorePostRequestMiddlewares(middlewares, context);
-        continue;
       }
-
-      if (!(error instanceof HttpError)) {
-        console.error(error);
-      }
-
-      respondWith(getResponse(Content(error, error.httpCode || 500)));
-      // await runCorePostRequestMiddlewares(middlewares, context);
-    }
+    });
   }
 }
 

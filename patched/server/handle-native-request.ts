@@ -112,7 +112,7 @@ async function handleFullServer<TState>(
       );
 
       // TODO: we need to confirm this doesn't hurt performance as we include context and middleware in the handler, especially memory leak
-      const respondWith = async (res?: Response | Promise<Response>): Promise<void> => {
+      const respondWith = async (_res?: Response | Promise<Response>): Promise<void> => {
         await runCorePostRequestMiddlewares(middlewares, context);
         await respondWithWrapper(request.respondWith, conn)(getResponse(context.response.getMergedResult()));
       };

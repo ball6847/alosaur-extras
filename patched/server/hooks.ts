@@ -1,3 +1,4 @@
+// deno-lint-ignore-file ban-types no-explicit-any
 import { HttpContext, PrimitiveResponse } from 'https://deno.land/x/alosaur@v0.38.0/mod.ts';
 import { HookMetadataArgs } from 'https://deno.land/x/alosaur@v0.38.0/src/metadata/hook.ts';
 import { Context } from 'https://deno.land/x/alosaur@v0.38.0/src/models/context.ts';
@@ -24,7 +25,7 @@ export async function resolveHooks<TState, TPayload>(
         await (hook as any).instance[actionName](context, hook.payload);
 
         if (context.response.isImmediately()) {
-          let reverseActionName: HookMethod = actionName === 'onCatchAction' ? 'onCatchAction' : 'onPostAction';
+          const reverseActionName: HookMethod = actionName === 'onCatchAction' ? 'onCatchAction' : 'onPostAction';
 
           // run reverse resolved hooks
           await runHooks(

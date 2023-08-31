@@ -35,7 +35,27 @@ export function Authorize(
   };
 }
 
-export type AuthPayload = { roles?: string[]; policy?: AuthPolicy };
+export type AuthValidate = (context: SecurityContext) => boolean | Promise<boolean>;
+
+export type AuthPayload = {
+  /**
+   * List of permission to validate against jwt.roles, if jwt.roles doesn't contain any of the permission, it will be rejected and return 403
+   *
+   * If you need different permission source other than jwt.roles, use policy instead
+   */
+  roles?: string[];
+
+  /**
+   * Policy to validate against jwt, if it doesn't pass the policy, it will be rejected and return 403
+   */
+  policy?: AuthPolicy;
+
+  /**
+   * Custom validation function, if you have extra requirements to invalidate jwt by inspecting its content, if it doesn't pass the validation, it will be rejected and return 401
+   */
+  validate?: AuthValidate;
+};
+
 export type SchemePayload = {
   scheme: AuthenticationScheme;
   payload?: AuthPayload;
@@ -74,42 +94,32 @@ export class AuthorizeHook implements HookTarget<unknown, SchemePayload> {
     context: SecurityContext<unknown>,
     schemePayload: SchemePayload,
   ) {
+    const { roles, policy, validate } = schemePayload.payload || {};
     const identity = context.security.auth.identity();
 
     if (!identity) {
-      context.response.result = await this.actionHandler
-        .getUnauthorizedActionResult(
-          context,
-          schemePayload,
-        );
+      context.response.result = await this.actionHandler.getUnauthorizedActionResult(context, schemePayload);
+      context.response.setImmediately();
+      return;
+    }
+
+    // our custom validation
+    if (validate && !(await Promise.resolve(validate(context)))) {
+      context.response.result = await this.actionHandler.getUnauthorizedActionResult(context, schemePayload);
       context.response.setImmediately();
       return;
     }
 
     // authorization required but doesn't meet roles requirements
-    if (
-      schemePayload.payload?.roles &&
-      !isRolesContains(identity, schemePayload.payload.roles)
-    ) {
-      context.response.result = await this.actionHandler
-        .getForbiddenActionResult(
-          context,
-          schemePayload,
-        );
+    if (roles && !isRolesContains(identity, roles)) {
+      context.response.result = await this.actionHandler.getForbiddenActionResult(context, schemePayload);
       context.response.setImmediately();
       return;
     }
 
     // authorization required but doesn't meet policy requirements
-    if (
-      schemePayload.payload?.policy &&
-      !(await isPolicyValidResult(context, schemePayload.payload.policy))
-    ) {
-      context.response.result = await this.actionHandler
-        .getForbiddenActionResult(
-          context,
-          schemePayload,
-        );
+    if (policy && !(await Promise.resolve(policy(context)))) {
+      context.response.result = await this.actionHandler.getForbiddenActionResult(context, schemePayload);
       context.response.setImmediately();
       return;
     }
@@ -120,14 +130,5 @@ export class AuthorizeHook implements HookTarget<unknown, SchemePayload> {
 }
 
 function isRolesContains(identity: Identity<unknown>, roles: string[]) {
-  return !!identity?.roles?.find((role) =>
-    roles.find((crole) => crole === role)
-  );
-}
-
-async function isPolicyValidResult(
-  context: SecurityContext,
-  policy: AuthPolicy,
-) {
-  return (await policy(context)) === true;
+  return !!identity?.roles?.find((role) => roles.find((crole) => crole === role));
 }
